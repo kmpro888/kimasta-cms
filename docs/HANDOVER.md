@@ -64,7 +64,7 @@ bin/doctor.php        9 ok, 1 warning, 0 failures
                       (the warning is APP_KEY on the development machine)
 modules               21
 migrations            15, all reversible (CI proves it on every run)
-tracked files         591, in 4 commits
+tracked files         598, in 7 commits
 ```
 
 Measured, not remembered: the numbers above come from the commands beside them.
