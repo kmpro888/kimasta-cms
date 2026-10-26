@@ -37,8 +37,21 @@ and "no sitemap artifact yet" -- those resolve in step 5 and step 7.
 
 ## 3. Upload
 
-Put the project **outside** the web root if the host allows it, and point the vhost at
-`public/`:
+Build the dependencies first. `vendor/` is **not** in the repository, because it is installed
+rather than written, so a checkout alone will not boot:
+
+```bash
+composer install --no-dev --optimize-autoloader
+```
+
+`--no-dev` matters: without it the server receives PHPUnit and its dependencies, which is a few
+thousand files it will never run.
+
+If the host has no Composer, run the command on your machine and upload the resulting `vendor/`
+directory with the rest.
+
+Then upload, and put the project **outside** the web root if the host allows it, pointing the
+vhost at `public/`:
 
 ```apache
 <VirtualHost *:80>
@@ -245,11 +258,16 @@ building this platform (`comment.moderate`, then `ads.manage`).
 ## 9. Rollback
 
 ```bash
-php bin/migrate.php rollback     # one migration
-php bin/migrate.php rollback 3   # three
+php bin/migrate.php status     # what is applied and what is pending
+php bin/migrate.php rollback   # undo the most recent batch
 ```
 
-Every migration has a `down()`, and CI verifies rollback then re-applies on every run.
+`rollback` takes **no argument** and undoes the last batch (at most five migrations). To go
+further back, run it again. Every migration has a `down()`, and CI verifies rollback then
+re-application on every run.
+
+The runner applies migrations in rounds of five internally, so `php bin/migrate.php` on a fresh
+database executes all of them in one invocation; you do not need to call it repeatedly.
 
 If code rollback is needed, restore the previous release directory and the database dump
 together -- the schema and the code move as a pair.

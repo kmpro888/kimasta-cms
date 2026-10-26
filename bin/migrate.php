@@ -5,12 +5,19 @@ declare(strict_types=1);
 /*
  * Migration runner CLI.
  *
- *   php bin/migrate.php            run pending migrations
+ *   php bin/migrate.php            run every pending migration
  *   php bin/migrate.php status     list pending/applied migrations
- *   php bin/migrate.php rollback   roll back the last batch
+ *   php bin/migrate.php rollback   roll back the most recent batch
  *
- * Refuses to run destructive operations unless APP_ENV is known, and locks
- * itself so two concurrent deploys cannot interleave DDL.
+ * `migrate` runs in rounds of five and repeats until nothing is left. The runner caps each
+ * call at five migrations to bound execution time on shared hosting, but a CLI that silently
+ * stopped after the fifth would leave a fresh install half-migrated: the operator sees
+ * "Executed 5 migration(s)", believes it is done, and then gets "table not found" from a
+ * deploy that reported success. The batching belongs inside the runner; the operator should
+ * not have to know about it.
+ *
+ * Refuses to run destructive operations unless APP_ENV is known, and locks itself so two
+ * concurrent deploys cannot interleave DDL.
  */
 
 use CMS\Core\Bootstrap\Application;
@@ -93,7 +100,17 @@ try {
 
         case 'migrate':
         default:
-            $executed = $runner->migrate(5);
+            // Repeat in rounds until a round finds nothing to do. A round returning zero is
+            // the only reliable stop condition: a fixed count would either stop early (the
+            // bug this loop exists to fix) or spin forever.
+            $executed = [];
+            $rounds = 0;
+
+            do {
+                $batch = $runner->migrate(5);
+                $executed = array_merge($executed, $batch);
+                $rounds++;
+            } while ($batch !== [] && $rounds < 100);
 
             fwrite(STDOUT, sprintf("Executed %d migration(s).\n", count($executed)));
 
