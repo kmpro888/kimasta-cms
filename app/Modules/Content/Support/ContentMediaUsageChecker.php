@@ -40,9 +40,13 @@ final class ContentMediaUsageChecker implements MediaUsageCheckerInterface
         $bindings = ['site_id' => $siteId, 'media_id' => $mediaId];
 
         if ($path !== null && $path !== '') {
+            // Escape LIKE wildcards: a filename may contain `_`, which would otherwise match
+            // any single character and report a false "still in use" for a different file.
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $path);
+
             $sql = 'SELECT COUNT(*) FROM contents WHERE site_id = :site_id'
                 . ' AND (featured_media_id = :media_id OR content_json LIKE :path_match)';
-            $bindings['path_match'] = '%' . $path . '%';
+            $bindings['path_match'] = '%' . $escaped . '%';
         }
 
         return (int) ($this->connection->scalar($sql, $bindings) ?? 0);
