@@ -21,6 +21,7 @@ use CMS\Modules\Editorial\Exceptions\IllegalTransitionException;
 use CMS\Modules\Editorial\Exceptions\WorkflowPermissionDeniedException;
 use CMS\Modules\Identity\Contracts\ActorProviderInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
+use CMS\Modules\Media\Exceptions\MediaNotFoundException;
 use CMS\Modules\Seo\Contracts\SeoServiceInterface;
 use CMS\Modules\Taxonomy\Contracts\TaxonomyServiceInterface;
 use CMS\Shared\Contracts\CsrfTokenManagerInterface;
@@ -320,6 +321,137 @@ final class ContentController extends AdminController
         return $this->redirect('/admin/content');
     }
 
+    // --------------------------------------------------------------------- media
+
+    /**
+     * POST /admin/content/{id}/featured
+     *
+     * Sets or clears the featured image. The media id is verified against this tenant, so a
+     * guessed id cannot attach another site's file.
+     */
+    public function featured(Request $request): Response
+    {
+        $content = $this->findContent($request);
+        $id = (int) $content->id;
+        $mediaId = $this->intParam($request, 'media_id');
+
+        if ($mediaId > 0) {
+            $this->requireMedia($request, $mediaId);
+        }
+
+        if (!$this->saveFields($request, $content, ['featured_media_id' => $mediaId > 0 ? $mediaId : null])) {
+            return $this->redirect('/admin/content/' . $id);
+        }
+
+        $this->flash('success', $mediaId > 0 ? 'Featured image set.' : 'Featured image removed.');
+
+        return $this->redirect('/admin/content/' . $id);
+    }
+
+    /**
+     * POST /admin/content/{id}/block-image
+     *
+     * Replaces one block with an image block pointing at a library file. Applying it on the
+     * server keeps the picker a plain form: the browser posts which block and which image,
+     * and comes back to the editor with the block already written.
+     */
+    public function blockImage(Request $request): Response
+    {
+        $content = $this->findContent($request);
+        $id = (int) $content->id;
+        $index = $this->intParam($request, 'index');
+
+        $media = $this->requireMedia($request, $this->intParam($request, 'media_id'));
+
+        $blocks = $content->blocks();
+
+        // The editor always renders one blank trailing row so a new block can be typed. Its
+        // index equals the current count, and choosing an image for it means "add a block" --
+        // rejecting it would make the last row of the editor the one thing that cannot accept
+        // an image.
+        if ($index === count($blocks)) {
+            $blocks[] = [
+                'type' => 'image',
+                'version' => 1,
+                'data' => [
+                    'url' => $media->url(),
+                    'alt' => (string) ($media->altText ?? ''),
+                ],
+            ];
+        } elseif (array_key_exists($index, $blocks)) {
+            $blocks[$index] = [
+                'type' => 'image',
+                'version' => 1,
+                'data' => [
+                    // Site-relative, so the same stored value works on every host.
+                    'url' => $media->url(),
+                    'alt' => (string) ($media->altText ?? ''),
+                ],
+            ];
+        } else {
+            $this->flash('error', 'That block no longer exists. Save the article and try again.');
+
+            return $this->redirect('/admin/content/' . $id);
+        }
+
+        if (!$this->saveFields($request, $content, ['content_json' => $blocks])) {
+            return $this->redirect('/admin/content/' . $id);
+        }
+
+        $this->flash('success', 'Image placed in the block.');
+
+        return $this->redirect('/admin/content/' . $id);
+    }
+
+    /**
+     * Fetch media that belongs to this tenant, or 404.
+     *
+     * @throws HttpException
+     */
+    private function requireMedia(Request $request, int $mediaId): \CMS\Modules\Media\Entity\Media
+    {
+        try {
+            return $this->media->get($mediaId, $this->siteId($request));
+        } catch (MediaNotFoundException) {
+            throw HttpException::notFound();
+        }
+    }
+
+    /**
+     * Save a partial change using the same permission rules as the editor.
+     *
+     * Returns false when the article is not editable, so the caller can explain rather than
+     * produce a 403 page for something the person reached by a button.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    private function saveFields(Request $request, Content $content, array $attributes): bool
+    {
+        $actor = $this->requireCapability($request, 'content.read');
+        $siteId = $this->siteId($request);
+        $id = (int) $content->id;
+
+        try {
+            if ($this->contributor->isEditable($siteId, (int) $actor->id(), $id)) {
+                $this->contributor->updateOwn($siteId, (int) $actor->id(), $id, $attributes);
+
+                return true;
+            }
+
+            if ($actor->can('content.update')) {
+                $this->contents->update($id, $siteId, $attributes);
+
+                return true;
+            }
+        } catch (ContentNotEditableException) {
+            $this->flash('error', 'This article can no longer be edited.');
+
+            return false;
+        }
+
+        throw HttpException::forbidden('You cannot edit this article.');
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /**
@@ -350,6 +482,18 @@ final class ContentController extends AdminController
             }
         }
 
+        // The featured image is resolved to an entity so the editor can show it. A file that
+        // has since been deleted renders as "none set" rather than as a broken image.
+        $featured = null;
+
+        if ((int) ($values['featured_media_id'] ?? 0) > 0) {
+            try {
+                $featured = $this->media->get((int) $values['featured_media_id'], $siteId);
+            } catch (MediaNotFoundException) {
+                $featured = null;
+            }
+        }
+
         return $this->html($request, 'content/form', $content === null ? 'New article' : $content->title, [
             'content' => $content,
             'values' => $values,
@@ -357,6 +501,7 @@ final class ContentController extends AdminController
             'action' => $action,
             'editable' => $editable,
             'available' => $available,
+            'featured' => $featured,
             'canSubmit' => $content !== null
                 && $actor->can('workflow.submit')
                 && in_array('submitted', $available, true),

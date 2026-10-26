@@ -32,11 +32,12 @@ abstract class AdminTestCase extends AppTestCase
      * Submit a form.
      *
      * `$fields` lands in the request array, which is where `$_POST` ends up for a real
-     * url-encoded form.
+     * url-encoded form. `$files` mirrors `$_FILES` for a multipart form.
      *
      * @param array<string, mixed> $fields
+     * @param array<string, mixed> $files
      */
-    protected function post(string $path, array $fields = [], bool $withCsrf = true): Response
+    protected function post(string $path, array $fields = [], bool $withCsrf = true, array $files = []): Response
     {
         if ($withCsrf && !array_key_exists('_token', $fields)) {
             $fields['_token'] = $this->token();
@@ -48,6 +49,10 @@ abstract class AdminTestCase extends AppTestCase
             $this->host,
             [],
             $fields,
+            [],
+            [],
+            null,
+            $files,
         ));
     }
 

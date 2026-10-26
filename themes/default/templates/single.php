@@ -17,6 +17,22 @@ echo $renderer->partial($themeName, 'head', $view);
   <article class="content">
     <h1><?= $view->e($view->get('title', '')) ?></h1>
 
+    <?php
+    // The view model already resolves the featured image; the theme simply never printed it,
+    // so an image chosen in the admin had no visible effect on the site.
+    $featured = $view->get('featured_image');
+    ?>
+    <?php if (is_array($featured) && (string) ($featured['url'] ?? '') !== ''): ?>
+      <figure class="featured-image">
+        <img src="<?= $view->e($featured['url']) ?>"
+             alt="<?= $view->e($featured['alt'] ?? '') ?>"
+             <?php if (($featured['width'] ?? null) !== null && ($featured['height'] ?? null) !== null): ?>
+               width="<?= $view->e($featured['width']) ?>" height="<?= $view->e($featured['height']) ?>"
+             <?php endif; ?>
+             loading="lazy" decoding="async">
+      </figure>
+    <?php endif; ?>
+
     <?php if ($view->get('published_at') !== null): ?>
       <p class="meta">
         <time datetime="<?= $view->e($view->get('published_at')) ?>">

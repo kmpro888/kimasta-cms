@@ -28,6 +28,7 @@ $types = $view->get('types', []);
 $categories = $view->get('categories', []);
 $rows = $values['rows'] ?? [];
 $selectedTerms = $values['terms'] ?? [];
+$featured = $view->get('featured');
 $csrf = $view->get('csrf');
 
 $error = static function (string $field) use ($errors): string {
@@ -124,9 +125,22 @@ $rows[] = ['type' => 'paragraph', 'text' => '', 'level' => 2, 'items' => '', 'or
                         </label>
                     <?php elseif ($type === 'image'): ?>
                         <input class="field__input" type="text" name="blocks[<?= $e($index) ?>][data][url]"
-                               value="<?= $e($row['url'] ?? '') ?>" placeholder="Image URL (choose one from the media library)">
+                               value="<?= $e($row['url'] ?? '') ?>" placeholder="Image URL">
                         <input class="field__input" type="text" name="blocks[<?= $e($index) ?>][data][alt]"
                                value="<?= $e($row['alt'] ?? '') ?>" placeholder="Alternative text">
+
+                        <?php if (($row['url'] ?? '') !== ''): ?>
+                            <img class="block__preview" src="<?= $e($row['url']) ?>" alt="" loading="lazy">
+                        <?php endif; ?>
+
+                        <?php if ($content !== null): ?>
+                            <a class="button button--small"
+                               href="/admin/media?pick=block&amp;content_id=<?= $e($content->id) ?>&amp;index=<?= $e($index) ?>">
+                                Choose from the library
+                            </a>
+                        <?php else: ?>
+                            <p class="hint">Save the article first to choose an image from the library.</p>
+                        <?php endif; ?>
                     <?php else: ?>
                         <textarea class="field__input field__input--text" name="blocks[<?= $e($index) ?>][data][text]"
                                   rows="<?= $type === 'code' ? 6 : 3 ?>"
@@ -154,6 +168,34 @@ $rows[] = ['type' => 'paragraph', 'text' => '', 'level' => 2, 'items' => '', 'or
     </form>
 
     <aside class="editor__side">
+        <?php if ($content !== null): ?>
+            <div class="panel">
+                <h2 class="panel__title">Featured image</h2>
+
+                <?php if ($featured !== null): ?>
+                    <img class="panel__thumb" src="<?= $e($featured->url()) ?>"
+                         alt="<?= $e($featured->altText ?? '') ?>" loading="lazy">
+
+                    <?php if ($editable): ?>
+                        <form method="post" action="/admin/content/<?= $e($content->id) ?>/featured">
+                            <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
+                            <input type="hidden" name="media_id" value="0">
+                            <button class="button button--small button--block" type="submit">Remove image</button>
+                        </form>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <p class="empty">None set.</p>
+                <?php endif; ?>
+
+                <?php if ($editable): ?>
+                    <a class="button button--small button--block"
+                       href="/admin/media?pick=featured&amp;content_id=<?= $e($content->id) ?>">
+                        <?= $featured === null ? 'Choose image' : 'Replace image' ?>
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
         <?php if ($content !== null && $editable): ?>
             <form class="panel" method="post" action="/admin/content/<?= $e($content->id) ?>/terms">
                 <input type="hidden" name="_token" value="<?= $e($csrf) ?>">

@@ -24,6 +24,7 @@ $canReview = $actor !== null && $actor->can('workflow.review');
 $navItems = [
     '/admin' => 'Dashboard',
     '/admin/content' => 'Content',
+    '/admin/media' => 'Media',
 ];
 
 $isActive = static function (string $item) use ($path): bool {

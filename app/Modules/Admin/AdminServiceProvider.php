@@ -11,6 +11,7 @@ use CMS\Core\Security\RateLimiter;
 use CMS\Modules\Admin\Http\Controller\AuthController;
 use CMS\Modules\Admin\Http\Controller\ContentController;
 use CMS\Modules\Admin\Http\Controller\DashboardController;
+use CMS\Modules\Admin\Http\Controller\MediaController;
 use CMS\Modules\Admin\Http\Middleware\AdminAuthMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminContextMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminErrorMiddleware;
@@ -117,6 +118,17 @@ final class AdminServiceProvider implements ServiceProviderInterface
                 $c->get(BlockFormCompiler::class),
             )
         );
+
+        $container->singleton(
+            MediaController::class,
+            static fn (Container $c): MediaController => new MediaController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(MediaServiceInterface::class),
+            )
+        );
     }
 
     public function boot(Container $container): void
@@ -138,6 +150,10 @@ final class AdminServiceProvider implements ServiceProviderInterface
 
         $this->route($container, $router, 'GET', '/admin', DashboardController::class, 'index', $chain);
 
+        $this->route($container, $router, 'GET', '/admin/media', MediaController::class, 'index', $chain);
+        $this->route($container, $router, 'POST', '/admin/media', MediaController::class, 'store', $chain);
+        $this->route($container, $router, 'POST', '/admin/media/{id:\d+}/delete', MediaController::class, 'destroy', $chain);
+
         $this->route($container, $router, 'GET', '/admin/content', ContentController::class, 'index', $chain);
         $this->route($container, $router, 'GET', '/admin/content/new', ContentController::class, 'create', $chain);
         $this->route($container, $router, 'POST', '/admin/content', ContentController::class, 'store', $chain);
@@ -149,6 +165,8 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/terms', ContentController::class, 'terms', $chain);
         $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/seo', ContentController::class, 'seo', $chain);
         $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/delete', ContentController::class, 'delete', $chain);
+        $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/featured', ContentController::class, 'featured', $chain);
+        $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/block-image', ContentController::class, 'blockImage', $chain);
     }
 
     /**
