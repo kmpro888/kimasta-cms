@@ -329,7 +329,7 @@ final class MediaServiceTest extends ModuleDatabaseTestCase
         $media = $this->uploadPng($siteId);
 
         $usage = new class implements \CMS\Modules\Media\Contracts\MediaUsageCheckerInterface {
-            public function countReferences(int $mediaId, int $siteId): int
+            public function countReferences(int $mediaId, int $siteId, ?string $path = null): int
             {
                 return 3;
             }
@@ -362,7 +362,7 @@ final class MediaServiceTest extends ModuleDatabaseTestCase
         $media = $this->uploadPng($siteId);
 
         $usage = new class implements \CMS\Modules\Media\Contracts\MediaUsageCheckerInterface {
-            public function countReferences(int $mediaId, int $siteId): int
+            public function countReferences(int $mediaId, int $siteId, ?string $path = null): int
             {
                 return 3;
             }

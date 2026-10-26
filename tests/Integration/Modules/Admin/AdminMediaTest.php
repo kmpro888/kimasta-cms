@@ -28,6 +28,13 @@ final class AdminMediaTest extends AdminTestCase
     /**
      * Write a real PNG and store it through the service, so the row has real dimensions.
      */
+    private ?int $uploaderId = null;
+
+    private function uploader(): int
+    {
+        return $this->uploaderId ??= $this->makeUser('uploader', 'editor');
+    }
+
     private function uploadImage(string $name = 'picture', int $width = 40, int $height = 30): Media
     {
         $path = $this->path('uploads/' . $name . '.png');
@@ -38,7 +45,7 @@ final class AdminMediaTest extends AdminTestCase
 
         return $this->app->container()->get(MediaServiceInterface::class)->upload(
             $this->siteId,
-            $this->makeUser('uploader', 'editor'),
+            $this->uploader(),
             new UploadedFile(
                 tmpPath: $path,
                 originalName: $name . '.png',
@@ -193,6 +200,59 @@ final class AdminMediaTest extends AdminTestCase
         // the live site.
         self::assertSame(303, $response->status());
         self::assertCount(1, $this->app->container()->get(MediaServiceInterface::class)->listForSite($this->siteId));
+    }
+
+    #[Test]
+    public function anImageShownInsideAnArticleCannotBeDeleted(): void
+    {
+        $media = $this->uploadImage('in-body');
+        $author = $this->makeUser('writer', 'contributor');
+        $id = $this->draft('Displays A Picture', $author);
+
+        $this->loginAs($author);
+        // Index 1 is the blank trailing row, so this appends an image block.
+        $this->post('/admin/content/' . $id . '/block-image', ['media_id' => $media->id, 'index' => 1]);
+
+        $this->loginAs($this->makeUser('boss', 'editor'));
+
+        $response = $this->post('/admin/media/' . $media->id . '/delete');
+
+        // The article renders that file, and its featured_media_id is null: counting only the
+        // featured image would have let this delete through and broken a live page.
+        self::assertSame(303, $response->status());
+        self::assertCount(
+            1,
+            $this->app->container()->get(MediaServiceInterface::class)->listForSite($this->siteId),
+            'A file displayed by an article must survive deletion.'
+        );
+    }
+
+    #[Test]
+    public function theFileCanBeDeletedOnceTheArticleStopsUsingIt(): void
+    {
+        $media = $this->uploadImage('released');
+        $author = $this->makeUser('writer', 'contributor');
+        $id = $this->draft('Stops Using It', $author);
+
+        $this->loginAs($author);
+        $this->post('/admin/content/' . $id . '/block-image', ['media_id' => $media->id, 'index' => 1]);
+
+        // Saving the article with only the paragraph removes the image block again.
+        $this->post('/admin/content/' . $id . '/save', [
+            'title' => 'Stops Using It',
+            'blocks' => [['type' => 'paragraph', 'data' => ['text' => 'No picture any more.']]],
+        ]);
+
+        $this->loginAs($this->makeUser('boss', 'editor'));
+
+        $response = $this->post('/admin/media/' . $media->id . '/delete');
+
+        self::assertSame(303, $response->status());
+        self::assertCount(
+            0,
+            $this->app->container()->get(MediaServiceInterface::class)->listForSite($this->siteId),
+            'With no reference left, deletion must succeed.'
+        );
     }
 
     // ---------------------------------------------------------------- picker

@@ -14,7 +14,7 @@ use CMS\Modules\Media\Contracts\MediaUsageCheckerInterface;
  */
 final class NullMediaUsageChecker implements MediaUsageCheckerInterface
 {
-    public function countReferences(int $mediaId, int $siteId): int
+    public function countReferences(int $mediaId, int $siteId, ?string $path = null): int
     {
         return 0;
     }

@@ -219,7 +219,7 @@ final class MediaService implements MediaServiceInterface
         }
 
         if (!$force) {
-            $references = $this->usage->countReferences($id, $siteId);
+            $references = $this->usage->countReferences($id, $siteId, $media->path);
 
             if ($references > 0) {
                 throw new MediaInUseException($references);
