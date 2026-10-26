@@ -1,0 +1,44 @@
+# Defense in depth for the public uploads directory.
+#
+# public/.htaccess already blocks script execution for the whole document root,
+# but uploads are the only directory where untrusted bytes are written by
+# visitors/editors, so it gets its own guard. If this file is ever lost while
+# the parent config is replaced by hosting tooling, uploads still cannot run.
+
+# Never execute anything that looks like a script.
+<FilesMatch "\.(php|phtml|phar|php[0-9]*|cgi|pl|py|sh|asp|aspx|jsp)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Belt and braces: turn the PHP engine off for this directory.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Uploaded files must be served as opaque downloads unless explicitly typed,
+# so a crafted ".jpg" containing HTML cannot execute in the site's origin.
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Content-Security-Policy "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'"
+</IfModule>
+
+# No directory listing.
+Options -Indexes
+
+# Do not honour uploaded .htaccess files as configuration.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^\.htaccess$ - [F,L]
+</IfModule>

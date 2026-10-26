@@ -1,0 +1,152 @@
+# Two Remaining Defects — Implementation Report
+
+Controller-integrated, closing the two gaps found by HTTP verification at the end of Wave 9.
+
+---
+
+## Why these two
+
+Wave 9 closed the task pack, and verification then surfaced two things that were built but
+unreachable:
+
+| Defect | Evidence |
+|---|---|
+| `/sitemap.xml` returned 404 | cron wrote `storage/cache/system/sitemaps/sitemap-2.xml`; nothing served it |
+| no `POST /api/v1/media` | the media library could only accept files through the service, not the API |
+
+Both are the same class of defect as the four wiring gaps Wave 9 fixed: working code with no
+connection to the outside. Neither is a new feature.
+
+---
+
+## 1. `/sitemap.xml`
+
+### Files
+
+```text
+app/Modules/Seo/Http/SitemapController.php   NEW
+app/Modules/Seo/SeoServiceProvider.php       route + binding
+tests/Integration/Modules/Seo/SitemapRouteTest.php   NEW (5 tests)
+```
+
+### Where the route lives, and why
+
+Registered in `SeoServiceProvider::boot()`, not the theme layer. Two reasons:
+
+- the SEO module owns the sitemap;
+- providers boot in order, and Seo boots **before** Theme, so the exact path wins over
+  Theme's `/{path:.*}` catch-all. A test asserts the catch-all does not swallow it.
+
+### Behaviour
+
+| Condition | Response |
+|---|---|
+| artifact exists | 200, `application/xml`, `Cache-Control: public, max-age=86400` |
+| artifact absent | **404** |
+| unknown host | 404 |
+
+An absent artifact is a 404 rather than an empty `<urlset>`. An empty urlset is a valid
+answer that tells a crawler the site has no pages, which is worse than "not ready yet".
+
+**It is never generated on demand.** That rule is the reason the sitemap is an artifact at
+all: a crawler is exactly the traffic that must not trigger a content scan. A test publishes
+an article after generation and asserts it does **not** appear until the artifact is rebuilt.
+
+---
+
+## 2. `POST /api/v1/media`
+
+### Files
+
+```text
+app/Core/Http/Request.php                        file() accessor, files in fromGlobals/create
+app/Modules/Api/Http/Controller/MediaController.php   store()
+app/Modules/Api/ApiServiceProvider.php           route
+tests/Support/ApiTestCase.php                    call() accepts files
+tests/Integration/Modules/Api/ApiExtrasTest.php  +4 tests
+```
+
+### The Core change
+
+`Request` had no concept of an uploaded file: `fromGlobals()` read `php://input` but not
+`$_FILES`. It now:
+
+- takes a `files` array in the constructor (appended last, so existing positional callers are
+  unaffected) and populates it from `$_FILES` in `fromGlobals()`;
+- exposes `file(string $key)` returning a **normalised** shape, because `$_FILES` uses
+  different layouts for single and multi uploads;
+- exposes `files()`.
+
+Core deliberately does **not** construct a module's `UploadedFile`. It hands back the raw
+datum and the owning module maps it, which keeps the dependency pointing inward.
+
+### The controller
+
+Five checks, in order: capability `media.upload`, a file present, no upload error, the module
+vali…dation, then the map. Validation itself stays in `MediaService` (MIME sniffing, size,
+extension, double-extension) — the controller does not duplicate it.
+
+An upload error code is surfaced in `details.fields.file` rather than flattened into a generic
+422: a client that sent a file larger than the server accepts needs to know that.
+
+### Verified over real Apache, with curl multipart
+
+```
+POST /api/v1/media  (file + X-CSRF-Token)      201
+  {"id":2,"original_name":"upload-probe.png","path":"2/2026/10/upload-probe-088dcd1eaa3b.png",
+   "mime_type":"image/png","is_image":true,"width":24,"height":24,"alt_text":"Unggahan uji",...}
+POST /api/v1/media  (no file)                  422
+POST /api/v1/media  (no CSRF)                  403
+```
+
+The stored path is hashed, so two uploads with the same filename cannot overwrite each other.
+
+---
+
+## Tests added
+
+- `SitemapRouteTest` (5): served as XML; absent artifact is 404; unknown host is 404; the
+  theme catch-all does not swallow it; serving does not regenerate.
+- `ApiExtrasTest` (+4): multipart upload succeeds; missing file is 422; capability required
+  (401 anonymous, 403 without the grant); CSRF required.
+
+## Tests passed
+
+```text
+PHPUnit 11.5.57 - PHP 8.3.6
+OK (1114 tests, 3487 assertions)
+```
+
+Baseline before this pass: 1105 tests. +9, none broken.
+
+---
+
+## Known limitations
+
+1. **The sitemap 404s until cron has run once.** By design, but it means a fresh deployment
+   serves 404 on `/sitemap.xml` until the first cron pass. Documented in the module README;
+   an operator should either run cron manually after deploy or accept the delay.
+2. **`/robots.txt` is still not served.** Same class of gap, not addressed here.
+3. **The sitemap is not split** into a sitemap index at the 50k-URL limit.
+4. **Upload accepts one file per request**, in a field named `file`. No multi-file field.
+5. **No image resizing on upload** beyond what `MediaService` already did; variants are
+   generated by the existing pipeline, not by this endpoint.
+6. **`Request::file()` returns null for a multi-file field** by design; supporting arrays
+   would need an `files()` consumer, and nothing needs it yet.
+7. **Sitemap serving has no `Last-Modified`/`ETag`**, so a revalidating crawler gets the full
+   body. `Cache-Control` covers the common case.
+
+---
+
+## CONTRACT_CHANGE_REQUEST
+
+none
+
+`Request` gained an optional constructor parameter and two accessors. Additive: every
+existing call site and all prior tests are unchanged.
+
+---
+
+## Ready to merge
+
+yes

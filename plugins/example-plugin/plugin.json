@@ -1,0 +1,11 @@
+{
+    "name": "example-plugin",
+    "title": "Example Plugin",
+    "version": "1.0.0",
+    "description": "Demonstrates every contribution point a plugin has: a content type, a taxonomy, a block, an action, a filter, an API route and a capability. It exists to prove the platform works without editing core.",
+    "author": "Core Platform",
+    "entry_class": "Plugin\\ExamplePlugin\\Plugin",
+    "requires": {
+        "php": "8.1"
+    }
+}

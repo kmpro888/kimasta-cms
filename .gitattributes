@@ -1,0 +1,44 @@
+# Line endings.
+#
+# This project was written on Windows and runs on Linux, and the working tree already mixes
+# CRLF and LF. Normalising to LF in the repository means a checkout on either platform holds
+# identical bytes, so a diff shows what changed rather than how the editor saved it.
+#
+# `text=auto` lets git detect text and apply the rule; explicit entries below make the intent
+# readable and cover files git guesses wrong.
+
+* text=auto eol=lf
+
+*.php text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.xml text eol=lf
+*.htaccess text eol=lf
+*.example text eol=lf
+*.dist text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Batch and PowerShell files keep CRLF: cmd.exe is unreliable with LF-only scripts.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary. Never diff, never convert.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary

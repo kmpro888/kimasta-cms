@@ -1,0 +1,55 @@
+<?php
+
+declare(strict_types=1);
+
+namespace CMS\Modules\Site\Contracts;
+
+use CMS\Shared\Contracts\SiteContextInterface;
+
+/**
+ * Read/write access to the three multisite tables owned by this module.
+ *
+ * All lookups are index-backed and use prepared statements with explicit
+ * column lists. Mutating a domain mapping must regenerate the compiled
+ * domain map (the implementation is responsible for doing so).
+ */
+interface SiteServiceInterface
+{
+    /**
+     * @throws \CMS\Modules\Site\Exceptions\SiteNotFoundException
+     */
+    public function findById(int $siteId): SiteContextInterface;
+
+    /**
+     * @throws \CMS\Modules\Site\Exceptions\SiteNotFoundException
+     */
+    public function findBySlug(string $slug): SiteContextInterface;
+
+    /**
+     * @return list<SiteContextInterface>
+     */
+    public function all(): array;
+
+    /**
+     * Map an additional domain onto a site and regenerate the domain map.
+     *
+     * @throws \CMS\Modules\Site\Exceptions\DuplicateDomainException
+     * @throws \CMS\Modules\Site\Exceptions\InvalidHostException
+     * @throws \CMS\Modules\Site\Exceptions\SiteNotFoundException
+     */
+    public function addDomain(int $siteId, string $domain, bool $isPrimary = false): void;
+
+    /**
+     * Remove a mapped domain and regenerate the domain map.
+     *
+     * @throws \CMS\Modules\Site\Exceptions\SiteNotFoundException
+     */
+    public function removeDomain(int $siteId, string $domain): void;
+
+    /**
+     * Recompile /storage/cache/system/domain-map.php from the database.
+     *
+     * @return int Number of host mappings written.
+     */
+    public function regenerateDomainMap(): int;
+}

@@ -1,0 +1,55 @@
+# Runtime artifacts. Nothing here is source: everything is regenerable, and committing it
+# would put one machine's cache, sessions and logs into everyone else's checkout.
+
+/.env
+
+/vendor/
+
+# Cache, sessions, logs, locks, generated artifacts (including the sitemap and rate-limit
+# counters). Keep the directories themselves, with .gitkeep, so a fresh clone has them.
+/storage/logs/*
+/storage/cache/*
+/storage/sessions/*
+/storage/temp/*
+/storage/tmp/*
+/storage/locks/*
+!/storage/logs/.gitkeep
+!/storage/cache/.gitkeep
+!/storage/sessions/.gitkeep
+!/storage/temp/.gitkeep
+!/storage/tmp/.gitkeep
+!/storage/locks/.gitkeep
+
+# Uploaded media. User content, not source.
+#
+# `.htaccess` is the exception and the reason this file matters: it is the guard that stops
+# an uploaded file from being executed as PHP. Ignoring it would ship a version of the site
+# where every upload is remote code execution.
+/public/uploads/*
+!/public/uploads/.gitkeep
+!/public/uploads/.htaccess
+
+.phpunit.cache
+/.phpunit.result.cache
+
+# Editor and OS noise.
+.idea/
+.vscode/
+*.log
+*.tmp
+Thumbs.db
+.DS_Store
+
+# Local scratch: probe scripts and dumps are not part of the project.
+/probe_*
+/*.html
+!/docs/**/*.html
+
+# Files that live in this working copy but are not source. Listed rather than deleted: they
+# belong to whoever is working here, not to the repository.
+/links.txt
+/need-agent.md
+/.env.test-prod
+
+# Harness artifacts (sandbox ACL recovery). Not part of the project.
+/.dsh-acl-recovery/

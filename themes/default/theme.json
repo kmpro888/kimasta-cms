@@ -1,0 +1,7 @@
+{
+    "name": "default",
+    "title": "Default Theme",
+    "version": "1.0.0",
+    "description": "Minimal server-rendered theme shipped with the CMS. It is the fallback for any site without an assigned theme.",
+    "author": "Core Platform"
+}

@@ -1,0 +1,20 @@
+# Front controller for Apache shared hosting.
+#
+# Only non-existent files/directories are rewritten to index.php, so static
+# assets are served directly by Apache with zero PHP involvement.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Script execution is denied under public/uploads/ only, by that directory's
+# own .htaccess. Denying it here would also block the front controller.
+Options -Indexes
