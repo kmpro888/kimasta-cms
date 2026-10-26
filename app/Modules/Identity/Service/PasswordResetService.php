@@ -8,6 +8,7 @@ use CMS\Modules\Identity\Contracts\PasswordResetServiceInterface;
 use CMS\Modules\Identity\Exceptions\ExpiredResetTokenException;
 use CMS\Modules\Identity\Exceptions\InvalidResetTokenException;
 use CMS\Modules\Identity\Repository\PasswordResetRepositoryInterface;
+use CMS\Modules\Identity\Support\PasswordPolicy;
 use CMS\Modules\Identity\Repository\UserRepositoryInterface;
 use CMS\Shared\Contracts\ClockInterface;
 use RuntimeException;
@@ -89,7 +90,11 @@ final class PasswordResetService implements PasswordResetServiceInterface
             throw new ExpiredResetTokenException();
         }
 
-        if ($newPassword === '') {
+        // A reset is one of the two ways a person chooses a new password; the same floor
+        // applies here as in the change-password path, so neither can be the weak door.
+        // Reported as an invalid token like every other failure, because this endpoint must
+        // not reveal whether a token was real.
+        if ($newPassword === '' || mb_strlen($newPassword) < PasswordPolicy::MIN_LENGTH) {
             throw new InvalidResetTokenException();
         }
 

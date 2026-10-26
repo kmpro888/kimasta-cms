@@ -23,6 +23,7 @@ use CMS\Modules\Contribution\Contracts\ContributorServiceInterface;
 use CMS\Modules\Editorial\Contracts\EditorialWorkflowInterface;
 use CMS\Modules\Identity\Contracts\ActorProviderInterface;
 use CMS\Modules\Identity\Contracts\AuthenticationServiceInterface;
+use CMS\Modules\Identity\Contracts\UserServiceInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
 use CMS\Modules\Seo\Contracts\SeoServiceInterface;
 use CMS\Modules\Site\Contracts\SiteResolverInterface;
@@ -86,6 +87,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
                 $c->get(ActorProviderInterface::class),
                 $c->get(AuthenticationServiceInterface::class),
                 $c->get(RateLimiter::class),
+                $c->get(UserServiceInterface::class),
             )
         );
 
@@ -148,6 +150,9 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/login', AuthController::class, 'login', $chain);
         $this->route($container, $router, 'POST', '/admin/logout', AuthController::class, 'logout', $chain);
 
+        $this->route($container, $router, 'GET', '/admin/password', AuthController::class, 'showPassword', $chain);
+        $this->route($container, $router, 'POST', '/admin/password', AuthController::class, 'changePassword', $chain);
+
         $this->route($container, $router, 'GET', '/admin', DashboardController::class, 'index', $chain);
 
         $this->route($container, $router, 'GET', '/admin/media', MediaController::class, 'index', $chain);
@@ -165,6 +170,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/terms', ContentController::class, 'terms', $chain);
         $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/seo', ContentController::class, 'seo', $chain);
         $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/delete', ContentController::class, 'delete', $chain);
+        $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/schedule', ContentController::class, 'schedule', $chain);
         $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/featured', ContentController::class, 'featured', $chain);
         $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/block-image', ContentController::class, 'blockImage', $chain);
     }

@@ -258,6 +258,33 @@ $rows[] = ['type' => 'paragraph', 'text' => '', 'level' => 2, 'items' => '', 'or
             </form>
         <?php endif; ?>
 
+        <?php if ($view->get('canSchedule')): ?>
+            <form class="panel" method="post" action="/admin/content/<?= $e($content->id) ?>/schedule">
+                <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
+                <h2 class="panel__title">Schedule</h2>
+
+                <?php if ($content->scheduledAt !== null): ?>
+                    <p class="hint">
+                        Scheduled for
+                        <strong><?= $e($content->scheduledAt->format('j M Y, H:i')) ?></strong> UTC.
+                        Choosing another time replaces it.
+                    </p>
+                <?php else: ?>
+                    <p class="hint">Cron publishes it at the chosen time.</p>
+                <?php endif; ?>
+
+                <label class="field">
+                    <span class="field__label">Publish at</span>
+                    <input class="field__input" type="datetime-local" name="publish_at"
+                           value="<?= $e($view->get('scheduledLocal')) ?>">
+                </label>
+
+                <button class="button button--small button--block" type="submit">
+                    <?= $content->scheduledAt === null ? 'Schedule' : 'Reschedule' ?>
+                </button>
+            </form>
+        <?php endif; ?>
+
         <?php if ($view->get('canSubmit')): ?>
             <form class="panel" method="post" action="/admin/content/<?= $e($content->id) ?>/submit">
                 <input type="hidden" name="_token" value="<?= $e($csrf) ?>">

@@ -261,6 +261,12 @@ final class ContentController extends AdminController
         $available = [];
 
         foreach ($this->workflow->allowedTransitions($content->status) as $target) {
+            // Same rule as the editor: `scheduled` is set from the Schedule panel, which also
+            // records the time. A transition alone would leave scheduled_at null.
+            if ($target === Content::STATUS_SCHEDULED) {
+                continue;
+            }
+
             if ($actor->can($this->workflow->requiredCapability($content->status, $target))) {
                 $available[] = $target;
             }
@@ -319,6 +325,93 @@ final class ContentController extends AdminController
         $this->flash('success', 'Moved to trash.');
 
         return $this->redirect('/admin/content');
+    }
+
+    /**
+     * POST /admin/content/{id}/schedule
+     *
+     * Sets the time the article should go live. The capability check and the "may this be
+     * scheduled at all" rule live in the workflow; this only parses the form value and reports
+     * a readable message.
+     */
+    public function schedule(Request $request): Response
+    {
+        $content = $this->findContent($request);
+        $actor = $this->requireCapability($request, 'content.read');
+        $id = (int) $content->id;
+
+        $at = $this->parsePublishAt($request, $this->stringParam($request, 'publish_at'));
+
+        if ($at === null) {
+            $this->flash('error', 'Choose a valid date and time.');
+
+            return $this->redirect('/admin/content/' . $id);
+        }
+
+        if ($at <= new \DateTimeImmutable('now', $at->getTimezone())) {
+            // Not harmful -- cron would publish it on the next run -- but saying so beats
+            // silently treating a past date as "publish now".
+            $this->flash('error', 'Choose a time in the future.');
+
+            return $this->redirect('/admin/content/' . $id);
+        }
+
+        try {
+            $this->workflow->schedule($id, $this->siteId($request), $actor, $at);
+        } catch (WorkflowPermissionDeniedException) {
+            $this->flash('error', 'You do not have permission to schedule.');
+
+            return $this->redirect('/admin/content/' . $id);
+        } catch (IllegalTransitionException) {
+            $this->flash('error', 'This article cannot be scheduled from ' . $content->status . '.');
+
+            return $this->redirect('/admin/content/' . $id);
+        }
+
+        $this->flash('success', 'Scheduled for ' . $at->format('j M Y, H:i') . '.');
+
+        return $this->redirect('/admin/content/' . $id);
+    }
+
+    /**
+     * Parse a `datetime-local` value in the site's timezone.
+     *
+     * The browser sends `2026-11-01T09:00` with no zone. Reading it in UTC would publish the
+     * article at the wrong hour for every site that is not on UTC, so the site's timezone is
+     * applied here.
+     */
+    private function parsePublishAt(Request $request, string $value): ?\DateTimeImmutable
+    {
+        if (trim($value) === '') {
+            return null;
+        }
+
+        try {
+            $zone = new \DateTimeZone($this->site($request)->timezone());
+        } catch (\Exception) {
+            $zone = new \DateTimeZone('UTC');
+        }
+
+        foreach (['Y-m-d\TH:i', 'Y-m-d\TH:i:s', 'Y-m-d H:i', 'Y-m-d H:i:s'] as $format) {
+            $parsed = \DateTimeImmutable::createFromFormat($format, $value, $zone);
+
+            if (!$parsed instanceof \DateTimeImmutable) {
+                continue;
+            }
+
+            // createFromFormat accepts impossible dates by rolling them over: month 13 becomes
+            // January of the next year, day 45 becomes the next month. Without this check
+            // "2099-13-45T99:99" scheduled an article on a date nobody typed.
+            $errors = \DateTimeImmutable::getLastErrors();
+
+            if (is_array($errors) && (($errors['warning_count'] ?? 0) > 0 || ($errors['error_count'] ?? 0) > 0)) {
+                return null;
+            }
+
+            return $parsed;
+        }
+
+        return null;
     }
 
     // --------------------------------------------------------------------- media
@@ -476,6 +569,13 @@ final class ContentController extends AdminController
 
         if ($content !== null) {
             foreach ($this->workflow->allowedTransitions($content->status) as $target) {
+                // `scheduled` needs a time as well as a click, and has its own panel. Offering
+                // it here would create a scheduled article that the scheduler can never
+                // publish, because scheduled_at would stay null.
+                if ($target === Content::STATUS_SCHEDULED) {
+                    continue;
+                }
+
                 if ($actor->can($this->workflow->requiredCapability($content->status, $target))) {
                     $available[] = $target;
                 }
@@ -502,6 +602,10 @@ final class ContentController extends AdminController
             'editable' => $editable,
             'available' => $available,
             'featured' => $featured,
+            'canSchedule' => $content !== null
+                && $actor->can('content.publish')
+                && in_array($content->status, ['approved', 'scheduled'], true),
+            'scheduledLocal' => $content?->scheduledAt?->setTimezone(new \DateTimeZone($this->site($request)->timezone()))->format('Y-m-d\TH:i'),
             'canSubmit' => $content !== null
                 && $actor->can('workflow.submit')
                 && in_array('submitted', $available, true),

@@ -8,6 +8,7 @@ use CMS\Modules\Identity\Contracts\UserServiceInterface;
 use CMS\Modules\Identity\Entity\User;
 use CMS\Modules\Identity\Exceptions\DuplicateUserException;
 use CMS\Modules\Identity\Repository\UserRepositoryInterface;
+use CMS\Modules\Identity\Support\PasswordPolicy;
 use CMS\Shared\Contracts\ClockInterface;
 use InvalidArgumentException;
 use PDOException;
@@ -43,6 +44,7 @@ final class UserService implements UserServiceInterface
         $username = $this->requireString($data, 'username');
         $email = $this->requireString($data, 'email');
         $password = $this->requireString($data, 'password');
+        PasswordPolicy::assertAcceptable($password);
         $displayName = isset($data['display_name']) && is_string($data['display_name']) && $data['display_name'] !== ''
             ? $data['display_name']
             : $username;
@@ -149,9 +151,7 @@ final class UserService implements UserServiceInterface
 
     public function changePassword(int $userId, int $siteId, string $newPassword): void
     {
-        if ($newPassword === '') {
-            throw new InvalidArgumentException('Password must not be empty.');
-        }
+        PasswordPolicy::assertAcceptable($newPassword);
 
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
 
