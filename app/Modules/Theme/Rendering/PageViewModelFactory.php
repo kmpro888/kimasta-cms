@@ -175,6 +175,9 @@ final class PageViewModelFactory
             // walking a tree. The thread service already excludes pending and spam.
             'comments' => $this->commentThread($siteId, (int) $content->id),
             'comments_open' => $content->commentStatus === 'open',
+            // What the comment form posts back. Passed explicitly so the template does not have to
+            // reach into a content entity it is otherwise not given.
+            'comment_content_id' => (int) $content->id,
         ]);
     }
 

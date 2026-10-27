@@ -35,6 +35,7 @@ interface CommentServiceInterface
         int $userId,
         string $body,
         ?int $parentId = null,
+        ?string $authorName = null,
     ): Comment;
 
     /**

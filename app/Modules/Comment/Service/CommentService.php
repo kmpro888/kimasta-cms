@@ -35,6 +35,10 @@ final class CommentService implements CommentServiceInterface
     private const MIN_BODY_LENGTH = 2;
     private const MAX_BODY_LENGTH = 5000;
 
+    // A guest types their name; 190 is the column width.
+    private const MIN_NAME_LENGTH = 2;
+    private const MAX_NAME_LENGTH = 190;
+
     public function __construct(
         private readonly CommentRepositoryInterface $comments,
         private readonly ContentServiceInterface $contents,
@@ -50,6 +54,7 @@ final class CommentService implements CommentServiceInterface
         int $userId,
         string $body,
         ?int $parentId = null,
+        ?string $authorName = null,
     ): Comment {
         $body = trim($body);
 
@@ -95,17 +100,36 @@ final class CommentService implements CommentServiceInterface
             }
         }
 
-        $user = $this->users->find($userId, $siteId);
+        // A signed-in author is identified by their account; a guest has only a typed name.
+        //
+        // `user_id = 0` is the guest marker: the column is NOT NULL but carries no foreign key, so
+        // no row has to exist, and the moderation queue can tell staff from visitors by it.
+        if ($userId > 0) {
+            $user = $this->users->find($userId, $siteId);
 
-        if ($user === null) {
-            throw new CommentNotFoundException();
+            if ($user === null) {
+                throw new CommentNotFoundException();
+            }
+
+            $authorName = $user->displayName;
+        } else {
+            $authorName = trim((string) $authorName);
+
+            if (mb_strlen($authorName) < self::MIN_NAME_LENGTH) {
+                throw new \InvalidArgumentException('A name is required, at least '
+                    . self::MIN_NAME_LENGTH . ' characters.');
+            }
+
+            if (mb_strlen($authorName) > self::MAX_NAME_LENGTH) {
+                throw new \InvalidArgumentException('That name is too long.');
+            }
         }
 
         $comment = $this->comments->create($siteId, [
             'content_id' => $contentId,
             'parent_id' => $parentId,
             'user_id' => $userId,
-            'author_name' => $user->displayName,
+            'author_name' => $authorName,
             'body' => $body,
             // New comments await moderation. Auto-approving would put unreviewed text
             // on a public page.

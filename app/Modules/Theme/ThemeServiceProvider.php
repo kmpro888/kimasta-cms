@@ -6,6 +6,7 @@ namespace CMS\Modules\Theme;
 
 use CMS\Core\Bootstrap\ServiceProviderInterface;
 use CMS\Core\Container\Container;
+use CMS\Core\Security\RateLimiter;
 use CMS\Core\Filesystem\LockInterface;
 use CMS\Core\Routing\Router;
 use CMS\Modules\Advertising\Contracts\AdvertisingServiceInterface;
@@ -13,6 +14,7 @@ use CMS\Modules\Comment\Contracts\CommentServiceInterface;
 use CMS\Modules\Analytics\Contracts\AnalyticsServiceInterface;
 use CMS\Modules\Cache\Contracts\PageCacheInterface;
 use CMS\Modules\Content\Contracts\ContentQueryServiceInterface;
+use CMS\Modules\Content\Contracts\ContentServiceInterface;
 use CMS\Modules\Content\Contracts\ContentTypeRegistryInterface;
 use CMS\Modules\Content\Contracts\UrlGeneratorInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
@@ -27,6 +29,7 @@ use CMS\Modules\Theme\Contracts\ThemeRegistryInterface;
 use CMS\Modules\Theme\Contracts\ViewRendererInterface;
 use CMS\Modules\Theme\Http\PublicPageController;
 use CMS\Modules\Theme\Http\ThemeAssetController;
+use CMS\Modules\Theme\Http\PublicCommentController;
 use CMS\Modules\Theme\Rendering\PageViewModelFactory;
 use CMS\Modules\Theme\Service\TemplateResolver;
 use CMS\Modules\Theme\Service\ThemeRegistry;
@@ -106,6 +109,17 @@ final class ThemeServiceProvider implements ServiceProviderInterface
                 $c->get(ThemeRegistryInterface::class),
             ),
         );
+
+        $container->singleton(
+            PublicCommentController::class,
+            static fn (Container $c): PublicCommentController => new PublicCommentController(
+                $c->get(SiteResolverInterface::class),
+                $c->get(CommentServiceInterface::class),
+                $c->get(ContentServiceInterface::class),
+                $c->get(UrlGeneratorInterface::class),
+                $c->get(RateLimiter::class),
+            ),
+        );
     }
 
     public function boot(Container $container): void
@@ -120,6 +134,11 @@ final class ThemeServiceProvider implements ServiceProviderInterface
         ThemeAssetController::class,
         'theme.asset',
     );
+
+    // Public comment posting. A POST route of its own rather than a verb on the catch-all: the
+    // authorisation, the honeypot and the rate limit belong to one action, and the catch-all stays
+    // a pure GET renderer. Registered before it, so the path cannot be swallowed.
+    $router->post('/comment', PublicCommentController::class, 'public.comment');
 
     // One catch-all route renders every public page. The negative lookahead
         // keeps /api/ and /admin/ out of the theme entirely, so an unknown API

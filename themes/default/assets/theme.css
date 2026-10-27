@@ -79,7 +79,7 @@ a:hover { text-decoration: none; }
 .button {
   display: inline-block;
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
   padding: 0.5rem 1rem;
   border-radius: 4px;
   text-decoration: none;
@@ -236,4 +236,75 @@ a:hover { text-decoration: none; }
 .comment__body {
     margin: 0;
     font-size: 0.97rem;
+}
+
+/* ----------------------------------------------------------- comment form */
+
+.comment-form {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.comment-form__title {
+    font-size: 1.05rem;
+    margin: 0 0 1rem;
+}
+
+.comment-form__field {
+    margin: 0 0 1rem;
+}
+
+.comment-form__label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.comment-form__input {
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    font: inherit;
+    color: inherit;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.comment-form__textarea {
+    resize: vertical;
+    min-height: 7rem;
+}
+
+.comment-form__submit {
+    padding: 0.6rem 1.1rem;
+    font: inherit;
+    font-weight: 600;
+    color: var(--bg);
+    background: var(--fg);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.comment-form__note {
+    margin: 0.8rem 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+/* Hidden from people, present for scripts. */
+.comment-form__honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.comments__closed {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--muted);
 }
