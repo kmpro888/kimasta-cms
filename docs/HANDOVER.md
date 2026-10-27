@@ -96,6 +96,29 @@ them prevent a newsroom from working.
 
 ---
 
+## How caching actually behaves
+
+Worth stating plainly, because it is easy to assume more than the platform does.
+
+**What it is:** an application-level page cache. PHP boots, routes, runs the middleware chain, and
+*then* consults the cache. A cache hit skips the database and the rendering — measured at **0
+queries** versus 18 for a cold article.
+
+**What it is not:** an edge cache. `public/.htaccess` has no `mod_cache` or `mod_expires`, and the
+HTML is sent with `Cache-Control: public, max-age=0, must-revalidate`, which tells browsers and any
+CDN to ask the origin every time. A CDN in front would not reduce load.
+
+**The trap to avoid:** the compiled domain map is what makes a hit cost zero queries. If it is
+missing or stale the site still works but pays a site lookup per request; if it maps a live domain
+to an id that does not exist, the site 404s. The artifact is now scoped per database
+(`storage/cache/system/<database>/domain-map.php`), so a test run cannot clobber it, and
+`bin/doctor.php` will not catch a stale map — `php bin/cron.php` or `bin/seed.php --reseed-roles`
+regenerate it, as does any domain change.
+
+Full analysis: [`docs/reports/Caching-Path.md`](reports/Caching-Path.md).
+
+---
+
 ## Where to look
 
 | Question | File |

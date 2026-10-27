@@ -48,7 +48,26 @@ final class SiteServiceProvider implements ServiceProviderInterface
         $container->singleton(HostNormalizer::class, static fn (): HostNormalizer => new HostNormalizer());
 
         $container->singleton(DomainMap::class, static function (Container $c): DomainMap {
-            return new DomainMap(self::systemCacheDirectory($c->get(ConfigInterface::class)));
+            // The compiled map is scoped to its database.
+            //
+            // It used to live at `system/domain-map.php` for every installation on the machine,
+            // and the test harness regenerates it from the test database. Running the suite
+            // therefore overwrote the map the development site reads. The visible effect was
+            // small -- one extra site lookup per request until it was rebuilt -- but the
+            // dangerous one is a live domain mapped to an id that only exists in the test
+            // database: that is a 404 on the whole site until somebody regenerates.
+            //
+            // Naming the directory after the database makes the two artifacts distinct, so
+            // neither can silently answer for the other.
+            $config = $c->get(ConfigInterface::class);
+            $database = (string) $config->get('database.database', '');
+            $scope = $database === ''
+                ? 'default'
+                : (string) preg_replace('/[^A-Za-z0-9_.-]/', '_', $database);
+
+            return new DomainMap(
+                self::systemCacheDirectory($config) . DIRECTORY_SEPARATOR . $scope
+            );
         });
 
         $container->singleton(
