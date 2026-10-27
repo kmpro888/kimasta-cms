@@ -34,11 +34,7 @@ final class SitemapController implements RequestHandlerInterface
 
     public function handle(Request $request): Response
     {
-        try {
-            $siteId = $this->sites->siteIdFor($request->host());
-        } catch (SiteNotFoundException|InvalidHostException) {
-            throw HttpException::notFound();
-        }
+        $siteId = $this->siteIdFor($request);
 
         $xml = $this->sitemaps->read($siteId);
 
@@ -46,10 +42,48 @@ final class SitemapController implements RequestHandlerInterface
             throw HttpException::notFound();
         }
 
+        return $this->xml($xml);
+    }
+
+    /**
+     * One shard of a split sitemap.
+     *
+     * A site with more than 50,000 URLs gets a `<sitemapindex>` at `/sitemap.xml` pointing here.
+     * A shard that was never written is a 404 rather than an empty urlset, because an empty
+     * urlset tells a crawler those URLs no longer exist.
+     */
+    public function shard(Request $request): Response
+    {
+        $raw = (string) $request->attribute('route.shard', '');
+
+        if ($raw === '' || !ctype_digit($raw)) {
+            throw HttpException::notFound();
+        }
+
+        $xml = $this->sitemaps->readShard($this->siteIdFor($request), (int) $raw);
+
+        if ($xml === null) {
+            throw HttpException::notFound();
+        }
+
+        return $this->xml($xml);
+    }
+
+    private function siteIdFor(Request $request): int
+    {
+        try {
+            return $this->sites->siteIdFor($request->host());
+        } catch (SiteNotFoundException|InvalidHostException) {
+            throw HttpException::notFound();
+        }
+    }
+
+    private function xml(string $xml): Response
+    {
         return new Response($xml, 200, [
             'Content-Type' => 'application/xml; charset=utf-8',
-            // Crawlers may cache a sitemap; the artifact is rebuilt by cron, so a day is a
-            // safe revalidation window.
+            // Crawlers may cache a sitemap; the artifact is rebuilt by cron, so a day is a safe
+            // revalidation window.
             'Cache-Control' => 'public, max-age=86400',
         ]);
     }

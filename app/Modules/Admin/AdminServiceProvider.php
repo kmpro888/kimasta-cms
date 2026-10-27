@@ -13,6 +13,7 @@ use CMS\Modules\Admin\Http\Controller\ContentController;
 use CMS\Modules\Admin\Http\Controller\CommentController;
 use CMS\Modules\Admin\Http\Controller\DashboardController;
 use CMS\Modules\Admin\Http\Controller\MediaController;
+use CMS\Modules\Admin\Http\Controller\NotificationController;
 use CMS\Modules\Admin\Http\Middleware\AdminAuthMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminContextMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminErrorMiddleware;
@@ -27,6 +28,7 @@ use CMS\Modules\Identity\Contracts\ActorProviderInterface;
 use CMS\Modules\Identity\Contracts\AuthenticationServiceInterface;
 use CMS\Modules\Identity\Contracts\UserServiceInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
+use CMS\Modules\Notification\Contracts\NotificationServiceInterface;
 use CMS\Modules\Seo\Contracts\SeoServiceInterface;
 use CMS\Modules\Site\Contracts\SiteResolverInterface;
 use CMS\Modules\Taxonomy\Contracts\TaxonomyServiceInterface;
@@ -124,6 +126,17 @@ final class AdminServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(
+            NotificationController::class,
+            static fn (Container $c): NotificationController => new NotificationController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(NotificationServiceInterface::class),
+            )
+        );
+
+        $container->singleton(
             CommentController::class,
             static fn (Container $c): CommentController => new CommentController(
                 $c->get(AdminView::class),
@@ -168,6 +181,12 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/password', AuthController::class, 'changePassword', $chain);
 
         $this->route($container, $router, 'GET', '/admin', DashboardController::class, 'index', $chain);
+
+        $this->route($container, $router, 'GET', '/admin/notifications', NotificationController::class, 'index', $chain);
+        $this->route($container, $router, 'POST', '/admin/notifications/read-all', NotificationController::class, 'markAllRead', $chain);
+        $this->route($container, $router, 'POST', '/admin/notifications/{id:\d+}/read', NotificationController::class, 'markRead', $chain);
+        $this->route($container, $router, 'GET', '/admin/notifications/preferences', NotificationController::class, 'preferences', $chain);
+        $this->route($container, $router, 'POST', '/admin/notifications/preferences', NotificationController::class, 'updatePreferences', $chain);
 
         $this->route($container, $router, 'GET', '/admin/comments', CommentController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/comments/{id:\d+}/approve', CommentController::class, 'approve', $chain);

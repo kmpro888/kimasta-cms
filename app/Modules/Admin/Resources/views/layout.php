@@ -26,6 +26,7 @@ $navItems = [
     '/admin' => 'Dashboard',
     '/admin/content' => 'Content',
     '/admin/media' => 'Media',
+    '/admin/notifications' => 'Notifications',
 ];
 
 // Only shown to someone who can act on it: a menu entry that leads to a 403 page is worse than

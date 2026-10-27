@@ -8,6 +8,8 @@ use CMS\Core\Bootstrap\ServiceProviderInterface;
 use CMS\Core\Container\Container;
 use CMS\Core\Database\Connection;
 use CMS\Core\Database\ConnectionFactory;
+use CMS\Core\Http\Request;
+use CMS\Core\Http\Response;
 use CMS\Core\Routing\Router;
 use CMS\Modules\Content\Contracts\ContentQueryServiceInterface;
 use CMS\Modules\Content\Contracts\ContentServiceInterface;
@@ -122,6 +124,21 @@ final class SeoServiceProvider implements ServiceProviderInterface
         // and this provider boots before Theme's catch-all, so the exact path wins over
         // `/{path:.*}`.
         $router->get('/sitemap.xml', SitemapController::class, 'seo.sitemap');
+
+        // Shards of a split sitemap.
+        //
+        // Registered as a closure rather than as the controller class: a class name is resolved
+        // as a `RequestHandlerInterface` and only ever gets `handle()` called, so naming a second
+        // action that way silently served the index for every shard URL. The closure picks the
+        // action explicitly, the same way the API routes do.
+        //
+        // No inline regex on the parameter: a malformed shard is a plain 404 from the controller
+        // rather than a route that never matches.
+        $router->get(
+            '/sitemap-{shard}.xml',
+            static fn (Request $request): Response => $container->get(SitemapController::class)->shard($request),
+            'seo.sitemap.shard',
+        );
     }
 
     /**
@@ -141,7 +158,18 @@ final class SeoServiceProvider implements ServiceProviderInterface
             $storage = rtrim($base, '/\\') . DIRECTORY_SEPARATOR . 'storage';
         }
 
-        return rtrim($storage, '/\\') . DIRECTORY_SEPARATOR . 'cache'
+        $directory = rtrim($storage, '/\\') . DIRECTORY_SEPARATOR . 'cache'
             . DIRECTORY_SEPARATOR . 'system' . DIRECTORY_SEPARATOR . 'sitemaps';
+
+        // Scoped per database, for the same reason the compiled domain map is: the test suite
+        // writes sitemap artifacts from the test database, and a shared directory meant the
+        // development site's own file sat beside dozens of files from test runs whose site ids no
+        // longer existed -- seventy-one of them by the time this was noticed.
+        $database = (string) $config->get('database.database', '');
+        $scope = $database === ''
+            ? 'default'
+            : (string) preg_replace('/[^A-Za-z0-9_.-]/', '_', $database);
+
+        return $directory . DIRECTORY_SEPARATOR . $scope;
     }
 }

@@ -114,6 +114,37 @@ final class Route
                 continue;
             }
 
+            // A parameter that shares its segment with literal text, e.g. `/sitemap-{shard}.xml`.
+            //
+            // Without this branch the whole segment fell through to preg_quote() below, so the
+            // route compiled to the literal text `sitemap-{shard}.xml` and matched no real path:
+            // a route that exists, passes review, and silently does nothing. Literal pieces are
+            // still quoted; only the `{...}` tokens become captures.
+            if (str_contains($segment, '{')) {
+                $pieces = preg_split(
+                    '/(\{[A-Za-z_][A-Za-z0-9_]*(?::[^}]+)?\})/',
+                    $segment,
+                    -1,
+                    PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY
+                ) ?: [$segment];
+
+                $compiled = '';
+
+                foreach ($pieces as $piece) {
+                    if (preg_match('/^\{([A-Za-z_][A-Za-z0-9_]*)(?::(.+))?\}$/', $piece, $inline) === 1) {
+                        $compiled .= '(?P<' . $inline[1] . '>' . ($inline[2] ?? '[^/]+') . ')';
+
+                        continue;
+                    }
+
+                    $compiled .= preg_quote($piece, '#');
+                }
+
+                $parts[] = '/' . $compiled;
+
+                continue;
+            }
+
             $parts[] = '/' . preg_quote($segment, '#');
         }
 
