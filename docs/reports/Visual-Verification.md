@@ -98,6 +98,14 @@ Rendered from the running site, with the real stylesheet.
 
 ![Login](images/admin-login.png)
 
+### The same article at phone width
+
+![Article at 390px](images/public-article-mobile.png)
+
+Rendered at 390x844 and checked programmatically as well as by eye: the last three pixel columns
+contain only the footer's full-bleed rule, so nothing overflows horizontally. The `56rem`
+breakpoint behaves.
+
 ---
 
 ## Tests added
@@ -137,12 +145,12 @@ been stated, and was not.
 
 1. **Screenshots are not an accessibility audit.** Colour contrast, focus order and screen-reader
    behaviour are still unverified.
-2. **One viewport tested** (1280px). The CSS has a `56rem` breakpoint that was never rendered at a
-   phone width.
+2. **Two viewports tested** (1280px and 390px). Not tested at 320px, in landscape, or with a
+   zoomed browser.
 3. **Chrome only.** No Safari, Firefox or older-browser check.
 4. **Admin screens were rendered from saved HTML with a `<base>` tag**, not through a live
-   authenticated browser session. Layout and CSS are faithful; JavaScript behaviour is not
-   exercised there (there is none in the admin anyway).
+   authenticated browser session. Layout and CSS are faithful; interactivity is not exercised
+   there (there is no JavaScript in the admin anyway).
 5. **The default theme is deliberately plain.** It is a usable starting point, not a design.
 
 ---
