@@ -95,6 +95,13 @@ final class SiteService implements SiteServiceInterface
 
         return $this->findById($siteId);
     }
+    /**
+     * @return list<string>
+     */
+    public function domains(int $siteId): array
+    {
+        return $this->domains->domainsForSite($siteId);
+    }
     public function addDomain(int $siteId, string $domain, bool $isPrimary = false): void
     {
         $this->memo = [];
@@ -158,6 +165,14 @@ final class SiteService implements SiteServiceInterface
         string $status = 'active',
     ): SiteContextInterface {
         $normalized = $this->normalizer->normalize($primaryDomain);
+
+        // Checked before the insert, not after: creating the site first and failing on the domain
+        // row leaves a tenant with no way to be reached — an orphan the operator cannot see or
+        // delete. The check is not a substitute for the unique index, it is what keeps the failure
+        // from leaving debris behind.
+        if ($this->domains->findSiteIdByDomain($normalized) !== null) {
+            throw new DuplicateDomainException($normalized . ' is already mapped to a site.');
+        }
 
         $site = $this->sites->create(
             name: $name,

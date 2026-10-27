@@ -21,6 +21,7 @@ return [
     'nav.redirects' => 'Redirects',
     'nav.ads' => 'Ads',
     'nav.plugins' => 'Plugins',
+    'nav.sites' => 'Sites',
     'nav.settings' => 'Settings',
     'nav.sign_out' => 'Sign out',
 

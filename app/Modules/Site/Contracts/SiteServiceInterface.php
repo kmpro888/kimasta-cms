@@ -42,8 +42,29 @@ interface SiteServiceInterface
      *
      * @param array<string, mixed> $attributes
      */
+    /**
+     * Create a site and map its primary domain.
+     *
+     * The service owns this because creating a site is never just an insert: the domain row and the
+     * compiled domain map have to move with it, or the new tenant is unreachable.
+     */
+    public function create(
+        string $name,
+        string $slug,
+        string $primaryDomain,
+        string $defaultLocale = 'en',
+        string $timezone = 'UTC',
+        string $baseUrl = '',
+        string $status = 'active',
+    ): SiteContextInterface;
     public function update(int $siteId, array $attributes): SiteContextInterface;
 
+    /**
+     * Domains mapped onto a site, primary first.
+     *
+     * @return list<string>
+     */
+    public function domains(int $siteId): array;
     public function addDomain(int $siteId, string $domain, bool $isPrimary = false): void;
 
     /**

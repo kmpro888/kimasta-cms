@@ -21,6 +21,7 @@ use CMS\Modules\Admin\Http\Controller\PasswordResetAdminController;
 use CMS\Modules\Admin\Http\Controller\RedirectController;
 use CMS\Modules\Admin\Http\Controller\RevisionController;
 use CMS\Modules\Admin\Http\Controller\SettingsController;
+use CMS\Modules\Admin\Http\Controller\SiteController;
 use CMS\Modules\Admin\Http\Controller\UserController;
 use CMS\Modules\Admin\Http\Middleware\AdminAuthMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminContextMiddleware;
@@ -189,6 +190,20 @@ final class AdminServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(
+            SiteController::class,
+            static fn (Container $c): SiteController => new SiteController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(SiteServiceInterface::class),
+                $c->get(RoleServiceInterface::class),
+                $c->get(UserServiceInterface::class),
+                $c->get(TaxonomyServiceInterface::class),
+            )
+        );
+
+        $container->singleton(
             SettingsController::class,
             static fn (Container $c): SettingsController => new SettingsController(
                 $c->get(AdminView::class),
@@ -295,6 +310,11 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/plugins/uninstall', PluginController::class, 'uninstall', $chain);
         $this->route($container, $router, 'POST', '/admin/plugins/activate', PluginController::class, 'activate', $chain);
         $this->route($container, $router, 'POST', '/admin/plugins/deactivate', PluginController::class, 'deactivate', $chain);
+
+        $this->route($container, $router, 'GET', '/admin/sites', SiteController::class, 'index', $chain);
+        $this->route($container, $router, 'POST', '/admin/sites', SiteController::class, 'store', $chain);
+        $this->route($container, $router, 'POST', '/admin/sites/domain', SiteController::class, 'addDomain', $chain);
+        $this->route($container, $router, 'POST', '/admin/sites/domain/remove', SiteController::class, 'removeDomain', $chain);
 
         $this->route($container, $router, 'GET', '/admin/settings', SettingsController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/settings', SettingsController::class, 'save', $chain);

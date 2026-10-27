@@ -43,6 +43,7 @@ if ($actor !== null && $actor->can('settings.update')) {
     $navItems['/admin/redirects'] = $view->t('nav.redirects');
     $navItems['/admin/ads'] = $view->t('nav.ads');
     $navItems['/admin/plugins'] = $view->t('nav.plugins');
+    $navItems['/admin/sites'] = $view->t('nav.sites');
     $navItems['/admin/settings'] = $view->t('nav.settings');
 }
 

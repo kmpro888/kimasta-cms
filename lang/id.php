@@ -19,6 +19,7 @@ return [
     'nav.redirects' => 'Pengalihan',
     'nav.ads' => 'Iklan',
     'nav.plugins' => 'Plugin',
+    'nav.sites' => 'Situs',
     'nav.settings' => 'Pengaturan',
     'nav.sign_out' => 'Keluar',
 
