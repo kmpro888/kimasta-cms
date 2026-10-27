@@ -182,7 +182,9 @@ jobs:
           git checkout -b ci-diagnostics
           git add -f ci-diagnostic.txt
           git commit -m "CI diagnostic [skip ci]"
-          git push -f origin ci-diagnostics      - name: Report failures
+          git push -f origin ci-diagnostics
+
+      - name: Report failures
         if: failure()
         run: |
           echo "The suite failed. Reproduce locally with:"
