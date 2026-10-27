@@ -20,7 +20,10 @@
         <testsuite name="Security">
             <directory>tests/Security</directory>
         </testsuite>
-        <testsuite name="Performance">
+        <testsuite name="E2E">
+      <directory>tests/E2E</directory>
+    </testsuite>
+    <testsuite name="Performance">
             <directory>tests/Performance</directory>
         </testsuite>
     </testsuites>
