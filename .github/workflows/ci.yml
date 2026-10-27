@@ -10,6 +10,9 @@ name: CI
 # fix it was twenty-two, which is why CI was never practical until now. See
 # docs/reports/Test-Suite-Performance.md.
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: ['**']
@@ -168,7 +171,18 @@ jobs:
       - name: Run the full suite
         run: php vendor/bin/phpunit
 
-      - name: Report failures
+      - name: Capture the full-suite failure
+        # TEMPORARY: writes the output to a throwaway branch so it can be read from the public
+        # repository without a token. Removed once the cause is known.
+        if: failure()
+        run: |
+          php vendor/bin/phpunit > ci-diagnostic.txt 2>&1 || true
+          git config user.name "ci-diagnostic"
+          git config user.email "ci@example.invalid"
+          git checkout -b ci-diagnostics
+          git add -f ci-diagnostic.txt
+          git commit -m "CI diagnostic [skip ci]"
+          git push -f origin ci-diagnostics      - name: Report failures
         if: failure()
         run: |
           echo "The suite failed. Reproduce locally with:"
