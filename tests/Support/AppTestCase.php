@@ -87,13 +87,18 @@ abstract class AppTestCase extends ModuleDatabaseTestCase
         return (int) $user->id;
     }
 
-    protected function loginAs(int $userId): void
+    protected function loginAs(int $userId, ?int $siteId = null): void
     {
         // Exactly what AuthenticationService stores on a successful login. The session
         // object is shared by reference, so the identity services see this without
         // being re-resolved.
+        //
+        // The fingerprint is deliberately not written here: a real login writes it, and a session
+        // without one is adopted once by `currentUserId()`. Switching users mid-test therefore
+        // behaves like a fresh login because the previous fingerprint is cleared first.
+        $this->session->forget('auth.fingerprint');
         $this->session->put('auth.user_id', $userId);
-        $this->session->put('auth.site_id', $this->siteId);
+        $this->session->put('auth.site_id', $siteId ?? $this->siteId);
     }
 
     protected function logout(): void

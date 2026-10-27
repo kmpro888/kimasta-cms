@@ -30,6 +30,8 @@ final class AuthenticationService implements AuthenticationServiceInterface
 {
     private const SESSION_USER = 'auth.user_id';
 
+    private const SESSION_FINGERPRINT = 'auth.fingerprint';
+
     private const SESSION_SITE = 'auth.site_id';
 
     /**
@@ -96,6 +98,11 @@ final class AuthenticationService implements AuthenticationServiceInterface
         $this->session->regenerate();
         $this->session->put(self::SESSION_USER, $user->id);
         $this->session->put(self::SESSION_SITE, $siteId);
+        // A fingerprint of the credential this session was created with. Changing the password —
+        // from the profile screen, from an administrator's reset link, anywhere — changes it, and
+        // every older session stops being authenticated on its next request. Without this, a
+        // password change locks the door while leaving the other keys in the lock.
+        $this->session->put(self::SESSION_FINGERPRINT, self::fingerprint($user->passwordHash));
 
         return $user;
     }
@@ -104,6 +111,7 @@ final class AuthenticationService implements AuthenticationServiceInterface
     {
         $this->session->forget(self::SESSION_USER);
         $this->session->forget(self::SESSION_SITE);
+        $this->session->forget(self::SESSION_FINGERPRINT);
         $this->session->destroy();
     }
 
@@ -111,7 +119,50 @@ final class AuthenticationService implements AuthenticationServiceInterface
     {
         $value = $this->session->get(self::SESSION_USER);
 
-        return is_int($value) && $value > 0 ? $value : null;
+        if (!is_int($value) || $value <= 0) {
+            return null;
+        }
+
+        $siteId = $this->currentSiteId();
+
+        if ($siteId === null) {
+            return null;
+        }
+
+        // The session must still match the credential it was created with.
+        $user = $this->users->findById($value, $siteId);
+
+        if ($user === null) {
+            $this->logout();
+
+            return null;
+        }
+
+        $stored = $this->session->get(self::SESSION_FINGERPRINT);
+
+        if (!is_string($stored)) {
+            // A session created before this check existed: adopt it once, then it behaves like any
+            // other. After the deploy no new session can reach this branch.
+            $this->session->put(self::SESSION_FINGERPRINT, self::fingerprint($user->passwordHash));
+
+            return $value;
+        }
+
+        if (!hash_equals(self::fingerprint($user->passwordHash), $stored)) {
+            // The password changed (or the account was recreated) since this session signed in.
+            $this->logout();
+
+            return null;
+        }
+
+        return $value;
+    }
+
+    private static function fingerprint(string $passwordHash): string
+    {
+        // A hash of the stored hash: the session never holds anything that could be replayed as a
+        // credential, and the comparison is exact.
+        return substr(hash('sha256', $passwordHash), 0, 32);
     }
 
     /**

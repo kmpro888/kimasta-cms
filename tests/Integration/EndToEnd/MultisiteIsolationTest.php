@@ -224,7 +224,9 @@ final class MultisiteIsolationTest extends ApiTestCase
         self::assertNotNull($adminRoleId);
         $roles->assignRole($adminB, $adminRoleId, $this->siteB);
 
-        $this->loginAs($adminB);
+        // Signed in *against site B*, as a real login would: the session now verifies that its
+        // user actually belongs to the site it authenticated against.
+        $this->loginAs($adminB, $this->siteB);
 
         $crossRead = $this->app->handle(
             Request::create('GET', '/api/v1/media/' . $media->id, $this->hostB)

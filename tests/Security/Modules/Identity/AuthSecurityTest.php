@@ -163,8 +163,12 @@ final class AuthSecurityTest extends ModuleDatabaseTestCase
 
         $this->auth->login('alice', 'correct-horse', $siteId);
 
-        // Rotation happens before the identity is written.
-        self::assertSame(['regenerate', 'put:auth.user_id', 'put:auth.site_id'], $this->session->log);
+        // Rotation happens before the identity is written. The fingerprint is part of that write:
+        // it is what lets a password change end the session later.
+        self::assertSame(
+            ['regenerate', 'put:auth.user_id', 'put:auth.site_id', 'put:auth.fingerprint'],
+            $this->session->log
+        );
     }
 
     #[Test]
