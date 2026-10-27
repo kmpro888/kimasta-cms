@@ -206,13 +206,30 @@ final class BrowserE2ETest extends AdminTestCase
             . ' --host-resolver-rules=' . escapeshellarg('MAP ' . self::SITE_HOST . ' 127.0.0.1')
             . ' --dump-dom ' . escapeshellarg($this->url($path));
 
-        $output = [];
-        $status = 0;
-        // No shell redirection: 2>/dev/null is POSIX and silently breaks the command on
-        // Windows, which is how the first version produced an empty DOM.
-        exec($command, $output, $status);
+        $dom = '';
 
-        $dom = implode("\n", $output);
+        // Two attempts. Chrome renders its own error page when the request does not complete inside
+        // the virtual time budget, and on a loaded runner that happens intermittently even though
+        // the server is healthy: run #15 of this project's CI was green and run #16, on identical
+        // code, was red.
+        //
+        // This retries a *transport* failure, never an assertion. The assertions below run once,
+        // against whatever the browser finally rendered.
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $output = [];
+            $status = 0;
+            // No shell redirection: 2>/dev/null is POSIX and silently breaks the command on
+            // Windows, which is how the first version produced an empty DOM.
+            exec($command, $output, $status);
+
+            $dom = implode("\n", $output);
+
+            if (!str_contains($dom, 'An unexpected error occurred')) {
+                break;
+            }
+
+            usleep(500_000);
+        }
 
         // Chrome renders its own error page when it cannot talk to the server. Saying so, with the
         // server's own log, is the difference between a five-minute fix and an afternoon.
@@ -220,8 +237,8 @@ final class BrowserE2ETest extends AdminTestCase
             $log = trim((string) @file_get_contents(self::$serverLog));
 
             self::fail(
-                'The browser could not load ' . $this->url($path) . '. Server log:'
-                . "\n" . (substr($log, -1500) ?: '(empty)')
+                'The browser could not load ' . $this->url($path) . ' in two attempts. Server log:'
+                . "\n" . (substr($log, -1200) ?: '(empty)')
             );
         }
 
