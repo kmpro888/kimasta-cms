@@ -50,6 +50,7 @@ $csrf = $view->get('csrf');
                         <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
                         <input type="hidden" name="revision_id" value="<?= $e($revision->id) ?>">
                         <button class="button button--small" type="submit">Restore</button>
+                    <a class="button button--small" href="/admin/content/<?= $e($content->id) ?>/revisions/<?= $e($revision->id) ?>">Compare</a>
                     </form>
                 </td>
             </tr>

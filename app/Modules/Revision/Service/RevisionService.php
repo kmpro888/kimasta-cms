@@ -73,6 +73,137 @@ final class RevisionService implements RevisionServiceInterface
         return $revision;
     }
 
+    /**
+     * Compare a revision with the one before it, or with a revision the caller names.
+     *
+     * Block-level rather than character-level: the editor stores blocks, and a paragraph that lost a
+     * comma is not a different paragraph. Two changes matter to a person reviewing a revision — what
+     * the text said, and where the text went — and this reports exactly those.
+     *
+     * @return array{
+     *     title: array{from: string, to: string},
+     *     excerpt: array{from: string, to: string},
+     *     blocks: list<array{index: int, status: string, from: string, to: string}>,
+     *     changed: bool
+     * }
+     */
+    public function diff(int $revisionId, int $siteId, ?int $againstRevisionId = null): array
+    {
+        $revision = $this->get($revisionId, $siteId);
+
+        $against = null;
+
+        if ($againstRevisionId !== null) {
+            $against = $this->get($againstRevisionId, $siteId);
+
+            if ((int) $against->contentId !== (int) $revision->contentId) {
+                throw new \InvalidArgumentException('A revision can only be compared with one of the same content.');
+            }
+        } else {
+            foreach ($this->listFor((int) $revision->contentId, $siteId) as $candidate) {
+                if ((int) $candidate->revisionNumber === (int) $revision->revisionNumber - 1) {
+                    $against = $candidate;
+
+                    break;
+                }
+            }
+        }
+
+        $before = $this->blocksOf($against?->contentJson);
+        $after = $this->blocksOf($revision->contentJson);
+
+        $blocks = [];
+        $count = max(count($before), count($after));
+
+        for ($index = 0; $index < $count; $index++) {
+            $old = $before[$index] ?? null;
+            $new = $after[$index] ?? null;
+
+            if ($old === $new) {
+                continue;
+            }
+
+            $status = match (true) {
+                $old === null => 'added',
+                $new === null => 'removed',
+                default => 'changed',
+            };
+
+            $blocks[] = [
+                'index' => $index,
+                'status' => $status,
+                'from' => (string) ($old ?? ''),
+                'to' => (string) ($new ?? ''),
+            ];
+        }
+
+        $titleFrom = (string) ($against?->title ?? '');
+        $titleTo = (string) $revision->title;
+        $excerptFrom = (string) ($against?->excerpt ?? '');
+        $excerptTo = (string) ($revision->excerpt ?? '');
+
+        return [
+            'title' => ['from' => $titleFrom, 'to' => $titleTo],
+            'excerpt' => ['from' => $excerptFrom, 'to' => $excerptTo],
+            'blocks' => $blocks,
+            'changed' => $titleFrom !== $titleTo || $excerptFrom !== $excerptTo || $blocks !== [],
+        ];
+    }
+
+    /**
+     * The readable text of each block, in document order.
+     *
+     * A closed shape is not assumed: the editor may add a block type tomorrow, and a diff that
+     * ignored unknown types would silently claim "no change".
+     *
+     * @return list<string>
+     */
+    private function blocksOf(?string $json): array
+    {
+        if ($json === null || trim($json) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($json, true);
+
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $out = [];
+
+        foreach ($decoded as $block) {
+            $out[] = trim($this->flatten(is_array($block) ? ($block['data'] ?? $block) : $block));
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private function flatten(mixed $value): string
+    {
+        if (is_scalar($value)) {
+            return (string) $value;
+        }
+
+        if (!is_array($value)) {
+            return '';
+        }
+
+        $parts = [];
+
+        foreach ($value as $item) {
+            $text = $this->flatten($item);
+
+            if ($text !== '') {
+                $parts[] = $text;
+            }
+        }
+
+        return implode(' ', $parts);
+    }
     public function restore(int $revisionId, int $siteId, int $restoredBy): int
     {
         $revision = $this->get($revisionId, $siteId);

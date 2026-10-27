@@ -314,6 +314,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'GET', '/admin', DashboardController::class, 'index', $chain);
 
         $this->route($container, $router, 'GET', '/admin/content/{id:\d+}/revisions', RevisionController::class, 'index', $chain);
+        $this->route($container, $router, 'GET', '/admin/content/{id:\d+}/revisions/{revision:\d+}', RevisionController::class, 'diff', $chain);
         $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/revisions/restore', RevisionController::class, 'restore', $chain);
         $this->route($container, $router, 'POST', '/admin/users/{id:\d+}/reset-password', PasswordResetAdminController::class, 'issue', $chain);
 

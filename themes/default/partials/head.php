@@ -42,5 +42,6 @@ $themeVersion = (int) $view->get('theme_version', 1);
 ?>
 <?= $analyticsHtml ?>
 <?php endif; ?>
+  <link rel="alternate" type="application/atom+xml" title="<?= $view->e($view->get('site_name', '')) ?>" href="/atom.xml">
 </head>
 <body>

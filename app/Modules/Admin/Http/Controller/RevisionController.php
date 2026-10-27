@@ -57,6 +57,43 @@ final class RevisionController extends AdminController
         ]);
     }
 
+    /**
+     * A revision against the one before it.
+     *
+     * The list screen says a revision exists; this screen says what changed. Without it the only
+     * way to review a revision was to restore it and look.
+     */
+    public function diff(Request $request): Response
+    {
+        $this->requireCapability($request, 'content.update');
+
+        $siteId = $this->siteId($request);
+        $contentId = $this->intParam($request, 'id');
+        $revisionId = $this->intParam($request, 'revision');
+
+        try {
+            $content = $this->contents->get($contentId, $siteId);
+        } catch (ContentNotFoundException) {
+            throw HttpException::notFound();
+        }
+
+        $revision = $this->revisions->get($revisionId, $siteId);
+
+        if ((int) $revision->contentId !== $contentId) {
+            throw HttpException::notFound();
+        }
+
+        return $this->html(
+            $request,
+            'content/revision-diff',
+            'Compare revision ' . $revision->revisionNumber,
+            [
+                'content' => $content,
+                'revision' => $revision,
+                'diff' => $this->revisions->diff($revisionId, $siteId),
+            ]
+        );
+    }
     public function restore(Request $request): Response
     {
         $actor = $this->requireCapability($request, 'content.update');

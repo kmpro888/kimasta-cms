@@ -18,6 +18,7 @@ use CMS\Modules\Content\Contracts\UrlGeneratorInterface;
 use CMS\Modules\Identity\Contracts\UserServiceInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
 use CMS\Modules\Seo\Contracts\BreadcrumbServiceInterface;
+use CMS\Modules\Seo\Http\AtomFeedController;
 use CMS\Modules\Seo\Http\FeedController;
 use CMS\Modules\Seo\Http\RobotsController;
 use CMS\Modules\Seo\Http\SitemapController;
@@ -129,6 +130,14 @@ final class SeoServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(
+            AtomFeedController::class,
+            static fn (Container $c): AtomFeedController => new AtomFeedController(
+                $c->get(SiteResolverInterface::class),
+                $c->get(FeedService::class),
+            )
+        );
+
+        $container->singleton(
             FeedController::class,
             static fn (Container $c): FeedController => new FeedController(
                 $c->get(SiteResolverInterface::class),
@@ -162,6 +171,7 @@ final class SeoServiceProvider implements ServiceProviderInterface
         // `/{path:.*}`.
         $router->get('/robots.txt', RobotsController::class, 'seo.robots');
         $router->get('/feed', FeedController::class, 'seo.feed');
+        $router->get('/atom.xml', AtomFeedController::class, 'seo.atom');
         $router->get('/feed.xml', FeedController::class, 'seo.feed.xml');
         $router->get('/sitemap.xml', SitemapController::class, 'seo.sitemap');
 

@@ -162,6 +162,8 @@ try {
 
         foreach ($sites->all() as $site) {
             $items += $feeds->generate($site->id());
+            // Atom is generated from the same query, so the two feeds cannot disagree.
+            $feeds->generateAtom($site->id());
             $feedSites++;
         }
 

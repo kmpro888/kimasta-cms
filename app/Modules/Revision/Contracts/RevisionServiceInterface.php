@@ -53,6 +53,11 @@ interface RevisionServiceInterface
      * @throws \CMS\Modules\Revision\Exceptions\RevisionNotFoundException
      * @throws \CMS\Modules\Revision\Exceptions\ContentMissingException
      */
+    /**
+     * @return array{title: array{from: string, to: string}, excerpt: array{from: string, to: string}, blocks: list<array{index: int, status: string, from: string, to: string}>, changed: bool}
+     */
+    public function diff(int $revisionId, int $siteId, ?int $againstRevisionId = null): array;
+
     public function restore(int $revisionId, int $siteId, int $restoredBy): int;
 
     /**
