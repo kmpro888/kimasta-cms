@@ -29,7 +29,10 @@ for review.
 approves it.
 
 **An editor** publishes immediately, schedules for a future time, edits another person's draft,
-and deletes media that nothing uses.
+deletes media that nothing uses, and moderates comments (approve, spam, trash, delete).
+
+**A reader** sees approved comments on an article, but cannot post one: see the gap table below,
+which is the decision this platform is waiting on.
 
 **Everyone with an account** can change their own password and sign out.
 
