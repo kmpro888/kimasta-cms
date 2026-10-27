@@ -11,6 +11,7 @@ $themeName = (string) $view->get('theme_name', 'default');
 echo $renderer->partial($themeName, 'head', $view);
 ?>
 <main class="site-main">
+    <?= $renderer->partial($themeName, 'ad', $view->with(['ad_placement' => 'header'])) ?>
   <h1><?= $view->e($view->get('title', 'Archive')) ?></h1>
 
   <?php if ($view->get('term') !== null): ?>

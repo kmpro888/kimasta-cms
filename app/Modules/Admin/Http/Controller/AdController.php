@@ -11,6 +11,7 @@ use CMS\Modules\Admin\Support\AdminView;
 use CMS\Modules\Advertising\Contracts\AdvertisingServiceInterface;
 use CMS\Modules\Cache\Contracts\PageCacheInterface;
 use CMS\Modules\Advertising\Entity\Ad;
+use CMS\Modules\Advertising\Support\PlacementRegistry;
 use CMS\Modules\Identity\Contracts\ActorProviderInterface;
 use CMS\Shared\Contracts\CsrfTokenManagerInterface;
 use CMS\Shared\Contracts\SessionInterface;
@@ -111,10 +112,14 @@ final class AdController extends AdminController
     {
         return $this->html($request, 'ads/index', 'Advertising', [
             'ads' => $this->ads->listForSite($this->siteId($request)),
-            'placements' => Ad::PLACEMENTS,
+            // Only what the theme prints. An unsupported placement is still listed below the
+            // form with the reason, because silently offering a choice that does nothing is worse
+            // than saying the theme cannot render it.
+            'placements' => PlacementRegistry::supported(),
+            'unsupported' => PlacementRegistry::unsupported(),
             'errors' => $errors,
             'values' => $values ?? [
-                'name' => '', 'placement' => Ad::PLACEMENTS[0], 'body_html' => '',
+                'name' => '', 'placement' => PlacementRegistry::supported()[0], 'body_html' => '',
                 'target_url' => '', 'is_active' => true, 'priority' => 0,
             ],
         ], $status);
@@ -129,7 +134,12 @@ final class AdController extends AdminController
 
         return [
             'name' => trim($this->stringParam($request, 'name')),
-            'placement' => in_array($placement, Ad::PLACEMENTS, true) ? $placement : Ad::PLACEMENTS[0],
+            // A placement the theme cannot print is refused rather than silently rewritten to
+            // `header`: an ad stored against a slot that does not exist is money spent on nothing,
+            // and the operator would have no way to tell.
+            'placement' => PlacementRegistry::isSupported($placement)
+                ? $placement
+                : PlacementRegistry::supported()[0],
             'body_html' => trim($this->stringParam($request, 'body_html')),
             'target_url' => trim($this->stringParam($request, 'target_url')),
             'is_active' => $this->stringParam($request, 'is_active') === '1',

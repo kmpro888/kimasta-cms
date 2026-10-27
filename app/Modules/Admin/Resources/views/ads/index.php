@@ -12,6 +12,7 @@ $e = static fn (mixed $value): string => $view->e($value);
 
 $ads = $view->get('ads', []);
 $placements = $view->get('placements', []);
+$unsupported = $view->get('unsupported', []);
 $errors = $view->get('errors', []);
 $values = $view->get('values', []);
 $csrf = $view->get('csrf');
@@ -145,3 +146,18 @@ $error = static function (string $field) use ($errors): string {
         <button class="button button--primary" type="submit">Create ad</button>
     </div>
 </form>
+
+<?php if ($unsupported !== []): ?>
+    <div class="panel">
+        <h2 class="panel__title">Placements this theme does not print</h2>
+        <p class="hint">
+            These exist in the model and are not offered above. Saying so is the point: an option
+            that silently does nothing is worse than an option that is missing.
+        </p>
+        <ul class="hint">
+            <?php foreach ($unsupported as $placement => $reason): ?>
+                <li><strong><?= $e($placement) ?></strong> — <?= $e($reason) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>

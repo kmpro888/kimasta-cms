@@ -11,6 +11,7 @@ $themeName = (string) $view->get('theme_name', 'default');
 echo $renderer->partial($themeName, 'head', $view);
 ?>
 <main class="site-main">
+    <?= $renderer->partial($themeName, 'ad', $view->with(['ad_placement' => 'header'])) ?>
   <h1><?= $view->e($view->get('title', 'Not found')) ?></h1>
   <p><?= $view->e($view->get('notice', 'The page you are looking for does not exist.')) ?></p>
   <p><a href="/"><?= $view->e($view->get('home_label', 'Back to home')) ?></a></p>

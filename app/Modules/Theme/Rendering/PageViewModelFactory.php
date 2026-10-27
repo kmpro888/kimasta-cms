@@ -227,6 +227,16 @@ final class PageViewModelFactory
             'total_pages' => $totalPages,
             'term' => $term,
 
+            // Header and footer slots belong to the page, not to an article, so a listing needs
+            // them too. Without this the theme's slots existed but never had anything to print here.
+            // \ is an array here, not an entity: the id is read from it defensively so a
+            // malformed term cannot turn a listing into a warning.
+            'ads' => $this->adsFor(
+                $site->id(),
+                'listing',
+                isset($term['id']) ? [(int) $term['id']] : [],
+            ),
+
             // Archive pages still get SEO tags; they are not in the sitemap, but a
             // crawler can reach them.
             'seo_html' => '',

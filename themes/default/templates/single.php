@@ -14,6 +14,7 @@ $themeName = (string) $view->get('theme_name', 'default');
 echo $renderer->partial($themeName, 'head', $view);
 ?>
 <main class="site-main">
+    <?= $renderer->partial($themeName, 'ad', $view->with(['ad_placement' => 'header'])) ?>
   <article class="content">
     <h1><?= $view->e($view->get('title', '')) ?></h1>
 
@@ -61,7 +62,9 @@ echo $renderer->partial($themeName, 'head', $view);
       <div class="ad-slot ad-before"><?= (string) $ads['before_article'] ?></div>
     <?php endif; ?>
 
+        <?= $renderer->partial($themeName, 'ad', $view->with(['ad_placement' => 'before_article'])) ?>
     <div class="content-body"><?= (string) $view->get('content_html', '') ?></div>
+    <?= $renderer->partial($themeName, 'ad', $view->with(['ad_placement' => 'after_article'])) ?>
 
     <?php if (($ads['after_article'] ?? '') !== ''): ?>
       <div class="ad-slot ad-after"><?= (string) $ads['after_article'] ?></div>
