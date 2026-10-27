@@ -96,5 +96,6 @@ $isActive = static function (string $item) use ($path): bool {
 
     <?= $view->get('content', '') ?>
 </main>
+    <script src="/assets/admin.js" defer></script>
 </body>
 </html>

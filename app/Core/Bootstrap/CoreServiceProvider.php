@@ -18,6 +18,7 @@ use CMS\Core\Http\Controller\AgentDashboardController;
 use CMS\Core\Http\Controller\HealthController;
 use CMS\Core\Http\Middleware\ExceptionMiddleware;
 use CMS\Core\Http\Middleware\RequestIdMiddleware;
+use CMS\Core\Http\Middleware\SecurityHeadersMiddleware;
 use CMS\Core\Logging\Logger;
 use CMS\Core\Logging\LoggerInterface;
 use CMS\Core\Routing\Router;
@@ -143,6 +144,8 @@ final class CoreServiceProvider implements ServiceProviderInterface
         $router = $container->get(Router::class);
 
         $router->globalMiddleware(
+            // Outermost, so a 404 or a 500 carries the security headers too.
+            SecurityHeadersMiddleware::fromConfig($config),
             new RequestIdMiddleware(),
             new ExceptionMiddleware($debug, $container->get(LoggerInterface::class)),
         );

@@ -67,7 +67,7 @@ $error = static function (string $field) use ($errors): string {
                         </button>
                     </form>
                     <form method="post" action="/admin/ads/delete" class="inline"
-                          onsubmit="return confirm('Delete this ad?');">
+                          data-confirm="Delete this ad?">
                         <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
                         <input type="hidden" name="id" value="<?= $e($ad->id) ?>">
                         <button class="button button--small button--danger" type="submit">Delete</button>

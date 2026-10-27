@@ -129,7 +129,7 @@ $error = static function (string $field) use ($errors): string {
             <?php endif; ?>
 
             <form class="panel" method="post" action="/admin/users/<?= $e($user->id) ?>/delete"
-                  onsubmit="return confirm('Delete this account?');">
+                  data-confirm="Delete this account?">
                 <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
                 <h2 class="panel__title">Danger</h2>
                 <p class="hint">Deleting an account is permanent. The last administrator cannot be deleted.</p>

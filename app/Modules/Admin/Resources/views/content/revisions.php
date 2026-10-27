@@ -46,7 +46,7 @@ $csrf = $view->get('csrf');
                 <td>
                     <form method="post" action="/admin/content/<?= $e($content->id) ?>/revisions/restore"
                           class="inline"
-                          onsubmit="return confirm('Restore revision <?= $e($revision->revisionNumber) ?>? The current version is saved first.');">
+                          data-confirm="Restore revision <?= $e($revision->revisionNumber) ?>? The current version is saved first.">
                         <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
                         <input type="hidden" name="revision_id" value="<?= $e($revision->id) ?>">
                         <button class="button button--small" type="submit">Restore</button>

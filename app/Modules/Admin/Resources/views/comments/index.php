@@ -95,7 +95,7 @@ $formatDate = static fn (mixed $value): string => $value instanceof \DateTimeImm
                     <?php endif; ?>
 
                     <form method="post" action="/admin/comments/<?= $e($item->id) ?>/delete" class="inline"
-                          onsubmit="return confirm('Delete this comment permanently?');">
+                          data-confirm="Delete this comment permanently?">
                         <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
                         <input type="hidden" name="status" value="<?= $e($status) ?>">
                         <button class="button button--small button--danger" type="submit">Delete</button>

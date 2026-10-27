@@ -80,7 +80,7 @@ $csrf = $view->get('csrf');
                         <?php endif; ?>
 
                         <form method="post" action="/admin/plugins/uninstall" class="inline"
-                              onsubmit="return confirm('Uninstall? The plugin stops loading everywhere. Tables it created stay in the database.');">
+                              data-confirm="Uninstall? The plugin stops loading everywhere. Tables it created stay in the database.">
                             <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
                             <input type="hidden" name="name" value="<?= $e($manifest->name) ?>">
                             <button class="button button--small button--danger" type="submit">Uninstall</button>
