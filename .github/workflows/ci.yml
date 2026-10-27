@@ -60,6 +60,17 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
+      - name: Prepare the environment
+        # The unit job used to skip this and failed in one second on both PHP versions: the suite
+        # needs a configuration to run at all. Sharing the setup with the full job keeps the two
+        # from drifting.
+        run: |
+          cp .env.example .env
+          sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env
+          sed -i "s/^APP_KEY=.*/APP_KEY=$(php -r 'echo bin2hex(random_bytes(32));')/" .env
+          mkdir -p storage/cache storage/logs storage/sessions storage/locks public/uploads
+          chmod -R 0775 storage public/uploads
+
       - name: Run the unit suite
         run: vendor/bin/phpunit --testsuite Unit
 
