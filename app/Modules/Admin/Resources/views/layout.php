@@ -35,6 +35,10 @@ if ($canModerate) {
     $navItems['/admin/comments'] = 'Comments';
 }
 
+if ($actor !== null && $actor->can('users.read')) {
+    $navItems['/admin/users'] = 'People';
+}
+
 $isActive = static function (string $item) use ($path): bool {
     if ($item === '/admin') {
         return $path === '/admin';

@@ -14,6 +14,7 @@ use CMS\Modules\Admin\Http\Controller\CommentController;
 use CMS\Modules\Admin\Http\Controller\DashboardController;
 use CMS\Modules\Admin\Http\Controller\MediaController;
 use CMS\Modules\Admin\Http\Controller\NotificationController;
+use CMS\Modules\Admin\Http\Controller\UserController;
 use CMS\Modules\Admin\Http\Middleware\AdminAuthMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminContextMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminErrorMiddleware;
@@ -26,6 +27,7 @@ use CMS\Modules\Contribution\Contracts\ContributorServiceInterface;
 use CMS\Modules\Editorial\Contracts\EditorialWorkflowInterface;
 use CMS\Modules\Identity\Contracts\ActorProviderInterface;
 use CMS\Modules\Identity\Contracts\AuthenticationServiceInterface;
+use CMS\Modules\Identity\Contracts\RoleServiceInterface;
 use CMS\Modules\Identity\Contracts\UserServiceInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
 use CMS\Modules\Notification\Contracts\NotificationServiceInterface;
@@ -126,6 +128,18 @@ final class AdminServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(
+            UserController::class,
+            static fn (Container $c): UserController => new UserController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(UserServiceInterface::class),
+                $c->get(RoleServiceInterface::class),
+            )
+        );
+
+        $container->singleton(
             NotificationController::class,
             static fn (Container $c): NotificationController => new NotificationController(
                 $c->get(AdminView::class),
@@ -181,6 +195,13 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/password', AuthController::class, 'changePassword', $chain);
 
         $this->route($container, $router, 'GET', '/admin', DashboardController::class, 'index', $chain);
+
+        $this->route($container, $router, 'GET', '/admin/users', UserController::class, 'index', $chain);
+        $this->route($container, $router, 'GET', '/admin/users/new', UserController::class, 'create', $chain);
+        $this->route($container, $router, 'POST', '/admin/users', UserController::class, 'store', $chain);
+        $this->route($container, $router, 'GET', '/admin/users/{id:\d+}', UserController::class, 'edit', $chain);
+        $this->route($container, $router, 'POST', '/admin/users/{id:\d+}', UserController::class, 'save', $chain);
+        $this->route($container, $router, 'POST', '/admin/users/{id:\d+}/delete', UserController::class, 'delete', $chain);
 
         $this->route($container, $router, 'GET', '/admin/notifications', NotificationController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/notifications/read-all', NotificationController::class, 'markAllRead', $chain);
