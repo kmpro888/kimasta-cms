@@ -49,14 +49,42 @@ if ($count === 0 && !$open) {
             <?php endif; ?>
           </p>
           <p class="comment__body"><?= nl2br($view->e($body), false) ?></p>
+          <?php if ($open): ?>
+            <p class="comment__actions">
+              <a class="comment__reply" href="?reply_to=<?= $view->e((int) ($comment->id ?? 0)) ?>#comment-form">
+                <?= $view->e($view->t('public.comments.reply')) ?>
+              </a>
+            </p>
+          <?php endif; ?>
         </li>
       <?php endforeach; ?>
     </ol>
   <?php endif; ?>
 
   <?php if ($open && $contentId > 0): ?>
+    <?php
+    // The reply target, resolved against the visible thread so a hand-edited `reply_to` cannot
+    // label the form with somebody else's name.
+    $replyTo = (int) $view->get('reply_to', 0);
+    $replyName = '';
+    $replyId = 0;
+
+    foreach ($comments as $candidate) {
+        if ((int) ($candidate->id ?? 0) === $replyTo) {
+            $replyId = $replyTo;
+            $replyName = (string) ($candidate->authorName ?? '');
+        }
+    }
+    ?>
     <form class="comment-form" method="post" action="/comment">
       <input type="hidden" name="content_id" value="<?= $view->e($contentId) ?>">
+      <?php if ($replyId > 0): ?>
+        <input type="hidden" name="parent_id" value="<?= $view->e($replyId) ?>">
+        <p class="comment-form__replying">
+          <?= $view->e($view->t('public.comments.replying_to', ['name' => $replyName])) ?>
+          <a href="#comment-form" class="comment-form__cancel"><?= $view->e($view->t('public.comments.cancel_reply')) ?></a>
+        </p>
+      <?php endif; ?>
 
       <h3 class="comment-form__title"><?= $view->e($view->t('public.comments.form_title')) ?></h3>
 

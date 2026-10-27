@@ -162,6 +162,16 @@ final class PublicPageController implements RequestHandlerInterface
                 : TemplateContext::single($content->type);
 
             $view = $this->viewModels->forContent($site, $content, $context, $theme);
+
+            // A reply box is a different view of the same article. The page is not cacheable when
+            // `reply_to` is present (see `hasVaryingQuery`), so passing it here cannot leak into a
+            // cached copy served to somebody else.
+            $replyTo = (int) ($request->queryParam('reply_to') ?? 0);
+
+            if ($replyTo > 0) {
+                $view = $view->with(['reply_to' => $replyTo]);
+            }
+
             $template = $this->templates->resolve($theme->name, $context);
             $html = $this->renderer->render($template, $view);
 
@@ -397,6 +407,14 @@ final class PublicPageController implements RequestHandlerInterface
         $page = $request->queryParam('page');
 
         if ($page !== null && (int) $page > 1) {
+            return true;
+        }
+
+        // A reply changes the page: the form carries a different parent and the article shows
+        // "replying to". Caching it under the bare path would hand that state to the next reader.
+        $replyTo = $request->queryParam('reply_to');
+
+        if ($replyTo !== null && (int) $replyTo > 0) {
             return true;
         }
 

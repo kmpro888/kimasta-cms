@@ -84,6 +84,8 @@ final class CommentService implements CommentServiceInterface
 
         $depth = 0;
 
+        $parentUserId = 0;
+
         if ($parentId !== null) {
             $parent = $this->comments->find($parentId, $siteId);
 
@@ -94,6 +96,7 @@ final class CommentService implements CommentServiceInterface
             }
 
             $depth = $parent->depth + 1;
+            $parentUserId = (int) $parent->userId;
 
             if ($depth > self::MAX_DEPTH) {
                 throw new CommentDepthExceededException();
@@ -147,6 +150,9 @@ final class CommentService implements CommentServiceInterface
                 'site_id' => $siteId,
                 'user_id' => $userId,
                 'parent_id' => $parentId,
+                // Who wrote the parent, so a listener can tell them they were answered without
+                // this module having to expose a lookup for it.
+                'parent_user_id' => $parentUserId,
                 // Carried on the event so a listener can build a notification without loading the
                 // comment again: the notification module has no business reading this table.
                 'author_name' => $authorName,
@@ -195,7 +201,17 @@ final class CommentService implements CommentServiceInterface
 
         $this->events->dispatch(DomainEvent::create(
             'comment.approved',
-            ['id' => $commentId, 'content_id' => $updated->contentId],
+            [
+                'id' => $commentId,
+                'content_id' => $updated->contentId,
+                // The listener reads the tenant from the payload, as it does for `comment.created`.
+                // Without it the handler sees site 0 and stops before notifying anybody.
+                'site_id' => $siteId,
+                // Without these the listener could only notify the article's author, which is not
+                // who was waiting for the approval.
+                'user_id' => $updated->userId,
+                'author_name' => $updated->authorName,
+            ],
             $siteId,
             $this->clock,
         ));

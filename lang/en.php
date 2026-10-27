@@ -35,6 +35,9 @@ return [
     'public.comments.name' => 'Your name',
     'public.comments.body' => 'Comment',
     'public.comments.submit' => 'Post comment',
+    'public.comments.reply' => 'Reply',
+    'public.comments.replying_to' => 'Replying to :name',
+    'public.comments.cancel_reply' => 'Cancel',
     'public.comments.awaiting' => 'Your comment appears once a moderator has approved it.',
     'public.comments.honeypot' => 'Website',
 ];

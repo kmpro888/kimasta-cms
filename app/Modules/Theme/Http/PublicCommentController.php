@@ -87,7 +87,10 @@ final class PublicCommentController implements RequestHandlerInterface
         $body = (string) $request->input('body', '');
 
         try {
-            $this->comments->submit($siteId, $contentId, 0, $body, null, $name);
+            // A reply names its parent. Zero and absent both mean a top-level comment.
+            $parentId = (int) $request->input('parent_id', 0);
+
+            $this->comments->submit($siteId, $contentId, 0, $body, $parentId > 0 ? $parentId : null, $name);
         } catch (CommentsClosedException) {
             return $this->page(
                 409,

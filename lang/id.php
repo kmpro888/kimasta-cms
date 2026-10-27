@@ -32,6 +32,9 @@ return [
     'public.comments.name' => 'Nama Anda',
     'public.comments.body' => 'Komentar',
     'public.comments.submit' => 'Kirim komentar',
+    'public.comments.reply' => 'Balas',
+    'public.comments.replying_to' => 'Membalas :name',
+    'public.comments.cancel_reply' => 'Batal',
     'public.comments.awaiting' => 'Komentar Anda muncul setelah moderator menyetujuinya.',
     'public.comments.honeypot' => 'Situs web',
 ];

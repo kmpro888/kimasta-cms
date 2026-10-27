@@ -30,6 +30,8 @@ interface NotificationServiceInterface
         'content.published',
         // A visitor's comment waits for a moderator; the queue was silent until this existed.
         'comment.created',
+        // The other half of the conversation: the commenter hears back when it goes live.
+        'comment.approved',
     ];
 
     public const CHANNEL_INTERNAL = 'internal';

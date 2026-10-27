@@ -251,6 +251,9 @@ final class NotificationService implements NotificationServiceInterface
             // A comment waits for a moderator, so the moderators are the ones who need to know.
             'comment.created' => $this->roles->usersWithCapability('comment.moderate', $siteId),
 
+            // The author of the comment, and nobody else: an anonymous commenter has no inbox.
+            'comment.approved' => $this->commentAuthor($payload),
+
             // Everything else is news for the author.
             default => [$authorId],
         };
@@ -273,9 +276,29 @@ final class NotificationService implements NotificationServiceInterface
                     static fn (int $id): bool => $id !== $commenter
                 ));
             }
+
+            // A reply is news for the person who was answered, as well as for the moderators.
+            $parentUser = isset($payload['parent_user_id']) ? (int) $payload['parent_user_id'] : 0;
+
+            if ($parentUser > 0) {
+                $recipients[] = $parentUser;
+            }
         }
 
         return array_values(array_unique($recipients));
+    }
+
+    /**
+     * The author of a comment, if it was written by somebody with an account.
+     *
+     * @param array<string, mixed> $payload
+     * @return list<int>
+     */
+    private function commentAuthor(array $payload): array
+    {
+        $userId = isset($payload['user_id']) ? (int) $payload['user_id'] : 0;
+
+        return $userId > 0 ? [$userId] : [];
     }
 
     private function titleFor(string $event, Content $content, array $payload = []): string
@@ -284,6 +307,10 @@ final class NotificationService implements NotificationServiceInterface
             $name = trim((string) ($payload['author_name'] ?? ''));
 
             return 'New comment awaiting moderation' . ($name !== '' ? ' from ' . $name : '');
+        }
+
+        if ($event === 'comment.approved') {
+            return 'Your comment was approved';
         }
 
         $label = match ($event) {
@@ -304,6 +331,10 @@ final class NotificationService implements NotificationServiceInterface
             $excerpt = trim((string) ($payload['excerpt'] ?? ''));
 
             return 'On "' . $content->title . '"' . ($excerpt !== '' ? ': ' . $excerpt : '.');
+        }
+
+        if ($event === 'comment.approved') {
+            return 'Your comment on "' . $content->title . '" is now visible.';
         }
 
         $action = match ($event) {
