@@ -10,6 +10,9 @@ name: CI
 # fix it was twenty-two, which is why CI was never practical until now. See
 # docs/reports/Test-Suite-Performance.md.
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: ['**']
@@ -73,6 +76,22 @@ jobs:
 
       - name: Run the unit suite
         run: php vendor/bin/phpunit --testsuite Unit
+
+      - name: Capture the failure for diagnosis
+        # TEMPORARY. The unit job fails in one second on Linux and passes on Windows, and the log
+        # needs authentication to read. This writes the output to a throwaway branch so it can be
+        # read from the public repository. Removed once the cause is known.
+        if: failure()
+        run: |
+          php vendor/bin/phpunit --testsuite Unit > ci-diagnostic.txt 2>&1 || true
+          php -v >> ci-diagnostic.txt 2>&1
+          php -m >> ci-diagnostic.txt 2>&1
+          git config user.name "ci-diagnostic"
+          git config user.email "ci@example.invalid"
+          git checkout -b ci-diagnostics
+          git add -f ci-diagnostic.txt
+          git commit -m "CI diagnostic [skip ci]"
+          git push -f origin ci-diagnostics
 
   full:
     name: Full suite (PHP 8.3, MySQL)
