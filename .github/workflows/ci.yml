@@ -10,9 +10,6 @@ name: CI
 # fix it was twenty-two, which is why CI was never practical until now. See
 # docs/reports/Test-Suite-Performance.md.
 
-permissions:
-  contents: write
-
 on:
   push:
     branches: ['**']
@@ -175,17 +172,6 @@ jobs:
           set -o pipefail
           php vendor/bin/phpunit 2>&1 | tee ci-suite.txt
 
-      - name: Capture the suite output
-        # Keeps the failure readable without a token: the suite's own output is committed to a
-        # throwaway branch when it fails. Removed once the E2E suite is deterministic.
-        if: failure()
-        run: |
-          git config user.name "ci-diagnostic"
-          git config user.email "ci@example.invalid"
-          git checkout -b ci-diagnostics
-          git add -f ci-suite.txt
-          git commit -m "CI diagnostic [skip ci]"
-          git push -f origin ci-diagnostics
 
       - name: Report failures
         if: failure()
