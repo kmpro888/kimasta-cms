@@ -116,6 +116,18 @@ $error = static function (string $field) use ($errors): string {
 
     <?php if (!$isNew && $canDelete): ?>
         <aside class="editor__side">
+            <?php if ($canDelete): ?>
+            <form class="panel" method="post" action="/admin/users/<?= $e($user->id) ?>/reset-password">
+                <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
+                <h2 class="panel__title">Password</h2>
+                <p class="hint">
+                    Issue a one-time reset link. It is shown once, right here, for you to pass on —
+                    the public site has no "forgot password" page of its own.
+                </p>
+                <button class="button button--small button--block" type="submit">Issue reset link</button>
+            </form>
+            <?php endif; ?>
+
             <form class="panel" method="post" action="/admin/users/<?= $e($user->id) ?>/delete"
                   onsubmit="return confirm('Delete this account?');">
                 <input type="hidden" name="_token" value="<?= $e($csrf) ?>">

@@ -17,7 +17,9 @@ use CMS\Modules\Admin\Http\Controller\DashboardController;
 use CMS\Modules\Admin\Http\Controller\MediaController;
 use CMS\Modules\Admin\Http\Controller\NotificationController;
 use CMS\Modules\Admin\Http\Controller\PluginController;
+use CMS\Modules\Admin\Http\Controller\PasswordResetAdminController;
 use CMS\Modules\Admin\Http\Controller\RedirectController;
+use CMS\Modules\Admin\Http\Controller\RevisionController;
 use CMS\Modules\Admin\Http\Controller\SettingsController;
 use CMS\Modules\Admin\Http\Controller\UserController;
 use CMS\Modules\Admin\Http\Middleware\AdminAuthMiddleware;
@@ -36,7 +38,9 @@ use CMS\Modules\Identity\Contracts\AuthenticationServiceInterface;
 use CMS\Modules\Identity\Contracts\RoleServiceInterface;
 use CMS\Modules\Identity\Contracts\UserServiceInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
+use CMS\Modules\Identity\Contracts\PasswordResetServiceInterface;
 use CMS\Modules\Plugin\Contracts\PluginManagerInterface;
+use CMS\Modules\Revision\Contracts\RevisionServiceInterface;
 use CMS\Modules\Notification\Contracts\NotificationServiceInterface;
 use CMS\Modules\Seo\Contracts\RedirectServiceInterface;
 use CMS\Modules\Seo\Contracts\SeoServiceInterface;
@@ -134,6 +138,30 @@ final class AdminServiceProvider implements ServiceProviderInterface
                 $c->get(SeoServiceInterface::class),
                 $c->get(MediaServiceInterface::class),
                 $c->get(BlockFormCompiler::class),
+            )
+        );
+
+        $container->singleton(
+            RevisionController::class,
+            static fn (Container $c): RevisionController => new RevisionController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(RevisionServiceInterface::class),
+                $c->get(ContentServiceInterface::class),
+            )
+        );
+
+        $container->singleton(
+            PasswordResetAdminController::class,
+            static fn (Container $c): PasswordResetAdminController => new PasswordResetAdminController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(UserServiceInterface::class),
+                $c->get(PasswordResetServiceInterface::class),
             )
         );
 
@@ -252,6 +280,10 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/password', AuthController::class, 'changePassword', $chain);
 
         $this->route($container, $router, 'GET', '/admin', DashboardController::class, 'index', $chain);
+
+        $this->route($container, $router, 'GET', '/admin/content/{id:\d+}/revisions', RevisionController::class, 'index', $chain);
+        $this->route($container, $router, 'POST', '/admin/content/{id:\d+}/revisions/restore', RevisionController::class, 'restore', $chain);
+        $this->route($container, $router, 'POST', '/admin/users/{id:\d+}/reset-password', PasswordResetAdminController::class, 'issue', $chain);
 
         $this->route($container, $router, 'GET', '/admin/ads', AdController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/ads', AdController::class, 'store', $chain);

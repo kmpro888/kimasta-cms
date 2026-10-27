@@ -31,6 +31,9 @@ $selectedTerms = $values['terms'] ?? [];
 $featured = $view->get('featured');
 $csrf = $view->get('csrf');
 
+// A history nobody can reach is an audit log at best; the link lives beside the editor.
+$revisionsUrl = $content !== null ? '/admin/content/' . (int) $content->id . '/revisions' : null;
+
 $error = static function (string $field) use ($errors): string {
     $list = $errors[$field] ?? [];
     $first = is_array($list) && $list !== [] ? (string) reset($list) : '';
@@ -52,6 +55,7 @@ $rows[] = ['type' => 'paragraph', 'text' => '', 'level' => 2, 'items' => '', 'or
                 <?php endif; ?>
             </p>
         <?php endif; ?>
+      <?php if ($revisionsUrl !== null): ?><p class="page-head__back"><a href="<?= $e($revisionsUrl) ?>">Revisions</a></p><?php endif; ?>
     </div>
 
     <p class="page-head__back"><a href="/admin/content">&larr; All content</a></p>
