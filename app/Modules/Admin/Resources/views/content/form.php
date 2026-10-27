@@ -63,7 +63,8 @@ $rows[] = ['type' => 'paragraph', 'text' => '', 'level' => 2, 'items' => '', 'or
     </p>
 <?php endif; ?>
 
-<div class="editor">
+<?php // A new article has no panels yet, so a reserved side column would be empty space. ?>
+<div class="editor<?= $content === null ? ' editor--single' : '' ?>">
     <form class="editor__main" method="post" action="<?= $e($action) ?>">
         <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
 

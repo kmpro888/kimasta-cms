@@ -118,6 +118,7 @@ final class PageViewModelFactory
             'base_url' => $site->baseUrl(),
             'theme_name' => $theme->name,
             'theme_assets' => $theme->assetsUrl(),
+            'theme_version' => $this->assetVersion($theme),
             'analytics_html' => $this->analyticsHtml($siteId),
 
             'title' => $content->title,
@@ -126,6 +127,10 @@ final class PageViewModelFactory
             'content_html' => (string) $content->contentHtml,
             'excerpt' => $content->excerpt,
             'published_at' => $content->publishedAt?->format(DATE_ATOM),
+            // A machine value and a human value are different things: the `datetime` attribute
+            // needs ISO, the reader needs "24 Oct 2026". Printing one in both places put
+            // "2026-10-24T12:21:47+00:00" in front of the reader.
+            'published_display' => $content->publishedAt?->format('j M Y'),
             'updated_at' => $content->updatedAt->format(DATE_ATOM),
 
             'seo_html' => $this->seo->render($seo),
@@ -178,6 +183,7 @@ final class PageViewModelFactory
             'base_url' => $site->baseUrl(),
             'theme_name' => $theme->name,
             'theme_assets' => $theme->assetsUrl(),
+            'theme_version' => $this->assetVersion($theme),
             'analytics_html' => $this->analyticsHtml($site->id()),
 
             'title' => $title,
@@ -207,6 +213,7 @@ final class PageViewModelFactory
             'base_url' => $site->baseUrl(),
             'theme_name' => $theme->name,
             'theme_assets' => $theme->assetsUrl(),
+            'theme_version' => $this->assetVersion($theme),
             'analytics_html' => $this->analyticsHtml($site->id()),
             'title' => 'Not found',
             'notice' => 'The page you are looking for does not exist.',
@@ -217,6 +224,21 @@ final class PageViewModelFactory
     /**
      * @return array{url: string, alt: string, width: ?int, height: ?int}|null
      */
+    /**
+     * A cache-busting value for the theme's assets.
+     *
+     * The stylesheet is served with `max-age=3600`, so without this an operator who edits the
+     * theme would spend up to an hour wondering why nothing changed. The file's modification
+     * time changes whenever the file does, which is exactly the signal needed.
+     */
+    private function assetVersion(\CMS\Modules\Theme\Entity\ThemeManifest $theme): int
+    {
+        $css = $theme->assetsPath() . DIRECTORY_SEPARATOR . 'theme.css';
+        $modified = is_file($css) ? filemtime($css) : false;
+
+        return $modified === false ? 1 : (int) $modified;
+    }
+
     private function featuredImage(Content $content, int $siteId, string $baseUrl): ?array
     {
         if ($content->featuredMediaId === null || $content->featuredMediaId <= 0) {

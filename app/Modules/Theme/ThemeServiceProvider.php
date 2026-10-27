@@ -25,6 +25,7 @@ use CMS\Modules\Theme\Contracts\TemplateResolverInterface;
 use CMS\Modules\Theme\Contracts\ThemeRegistryInterface;
 use CMS\Modules\Theme\Contracts\ViewRendererInterface;
 use CMS\Modules\Theme\Http\PublicPageController;
+use CMS\Modules\Theme\Http\ThemeAssetController;
 use CMS\Modules\Theme\Rendering\PageViewModelFactory;
 use CMS\Modules\Theme\Service\TemplateResolver;
 use CMS\Modules\Theme\Service\ThemeRegistry;
@@ -94,6 +95,15 @@ final class ThemeServiceProvider implements ServiceProviderInterface
                 $c->has(LockInterface::class) ? $c->get(LockInterface::class) : null,
             );
         });
+
+        // The router resolves the handler by class name, so a route without a binding falls
+        // through to a 404 even though the pattern matched.
+        $container->singleton(
+            ThemeAssetController::class,
+            static fn (Container $c): ThemeAssetController => new ThemeAssetController(
+                $c->get(ThemeRegistryInterface::class),
+            ),
+        );
     }
 
     public function boot(Container $container): void
@@ -101,7 +111,15 @@ final class ThemeServiceProvider implements ServiceProviderInterface
         /** @var Router $router */
         $router = $container->get(Router::class);
 
-        // One catch-all route renders every public page. The negative lookahead
+        // Theme assets live outside the web root, so they need a route. Registered before the
+    // catch-all: a stylesheet must not be answered by the page renderer.
+    $router->get(
+        '/themes/{theme:[A-Za-z0-9_-]+}/assets/{file:[A-Za-z0-9._-]+}',
+        ThemeAssetController::class,
+        'theme.asset',
+    );
+
+    // One catch-all route renders every public page. The negative lookahead
         // keeps /api/ and /admin/ out of the theme entirely, so an unknown API
         // path still yields the frozen JSON error envelope from the router rather
         // than an HTML 404 from the theme.

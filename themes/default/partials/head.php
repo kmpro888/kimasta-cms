@@ -15,6 +15,11 @@ $seoHtml = (string) $view->get('seo_html', '');
 $schemaHtml = (string) $view->get('seo_schema', '');
 $analyticsHtml = (string) $view->get('analytics_html', '');
 $themeName = (string) $view->get('theme_name', 'default');
+
+// The URL and its version come from the view model: themes live outside the document root and
+// are served by a route, so a hardcoded path 404s.
+$themeAssets = (string) $view->get('theme_assets', '/themes/' . $themeName . '/assets');
+$themeVersion = (int) $view->get('theme_version', 1);
 ?>
 <!DOCTYPE html>
 <html lang="<?= $view->e($view->get('locale', 'en')) ?>">
@@ -29,7 +34,7 @@ $themeName = (string) $view->get('theme_name', 'default');
 <?php if ($schemaHtml !== ''): ?>
 <?= $schemaHtml ?>
 <?php endif; ?>
-<link rel="stylesheet" href="/themes/<?= $view->e($themeName) ?>/assets/theme.css">
+<link rel="stylesheet" href="<?= $view->e($themeAssets) ?>/theme.css?v=<?= $view->e($themeVersion) ?>">
 <?php if ($analyticsHtml !== ''): ?>
 <?php
 // Raw by design: the analytics service builds a <script> tag, so escaping it

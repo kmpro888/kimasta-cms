@@ -36,7 +36,7 @@ echo $renderer->partial($themeName, 'head', $view);
     <?php if ($view->get('published_at') !== null): ?>
       <p class="meta">
         <time datetime="<?= $view->e($view->get('published_at')) ?>">
-          <?= $view->e($view->get('published_at')) ?>
+          <?= $view->e($view->get('published_display', $view->get('published_at'))) ?>
         </time>
       </p>
     <?php endif; ?>

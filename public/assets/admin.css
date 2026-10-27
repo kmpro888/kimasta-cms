@@ -865,3 +865,8 @@ body.is-error {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* An editor with no panels should use the whole width rather than reserving an empty column. */
+.editor--single {
+    grid-template-columns: minmax(0, 1fr);
+}

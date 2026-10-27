@@ -101,7 +101,7 @@ $action = match ($pick) {
                         <?= $e($item->originalName ?? basename($item->path)) ?>
                     </span>
                     <span class="media-card__size">
-                        <?= $e(number_format($item->filesize / 1024, 0)) ?> KB
+                        <?= $e($item->filesize < 1024 ? $item->filesize . ' B' : number_format($item->filesize / 1024, 0) . ' KB') ?>
                         <?php if ($item->width !== null && $item->height !== null): ?>
                             &middot; <?= $e($item->width) ?>x<?= $e($item->height) ?>
                         <?php endif; ?>

@@ -97,3 +97,85 @@ a:hover { text-decoration: none; }
     border-radius: 8px;
     display: block;
 }
+
+/* ------------------------------------------------------------- ad placements */
+
+/*
+ * Ad slots had a wrapper element but no styling, so a sponsored line sat in the article text
+ * looking like a stray link. A quiet bordered block separates it without shouting.
+ */
+.ad-slot {
+    margin: 1.75rem 0;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid #e4e4e8;
+    border-radius: 8px;
+    background: #fbfbfc;
+    font-size: 0.92rem;
+    color: #55555c;
+}
+
+.ad-slot::before {
+    content: "Advertisement";
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8a8a92;
+    margin-bottom: 0.45rem;
+}
+
+.ad-slot a {
+    color: inherit;
+}
+
+/* ------------------------------------------------------------------ taxonomy */
+
+/*
+ * The term list was a bare <ul>, so a category appeared as a stray bullet under the article
+ * with nothing saying what it was. Chips with a label make it read as metadata.
+ */
+.terms {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.terms::before {
+    content: "Filed under";
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a8a92;
+}
+
+.terms li {
+    font-size: 0.82rem;
+    color: #55555c;
+    background: #f2f2f5;
+    border-radius: 999px;
+    padding: 0.15rem 0.65rem;
+}
+
+.breadcrumbs {
+    font-size: 0.85rem;
+    color: #8a8a92;
+}
+
+.breadcrumbs a {
+    color: #55555c;
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+.meta {
+    color: #8a8a92;
+    font-size: 0.88rem;
+    margin: 0.35rem 0 0;
+}
