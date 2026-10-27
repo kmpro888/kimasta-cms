@@ -34,6 +34,7 @@ $error = static function (string $field) use ($errors): string {
         <th scope="col">Site</th>
         <th scope="col">Domains</th>
         <th scope="col">Locale</th>
+        <th scope="col">Status</th>
     </tr>
     </thead>
     <tbody>
@@ -71,6 +72,26 @@ $error = static function (string $field) use ($errors): string {
                 </form>
             </td>
             <td class="muted"><?= $e($site->defaultLocale()) ?></td>
+            <td>
+                <?php if ($site->isActive()): ?>
+                    <span class="badge badge--published">Active</span>
+                    <form method="post" action="/admin/sites/status" class="inline"
+                          data-confirm="Deactivate <?= $e($site->name()) ?>? Its public pages will answer 404.">
+                        <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
+                        <input type="hidden" name="site_id" value="<?= $e($site->id()) ?>">
+                        <input type="hidden" name="status" value="inactive">
+                        <button class="button button--small button--danger" type="submit">Deactivate</button>
+                    </form>
+                <?php else: ?>
+                    <span class="badge badge--trashed">Inactive</span>
+                    <form method="post" action="/admin/sites/status" class="inline">
+                        <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
+                        <input type="hidden" name="site_id" value="<?= $e($site->id()) ?>">
+                        <input type="hidden" name="status" value="active">
+                        <button class="button button--small" type="submit">Activate</button>
+                    </form>
+                <?php endif; ?>
+            </td>
         </tr>
     <?php endforeach; ?>
     </tbody>

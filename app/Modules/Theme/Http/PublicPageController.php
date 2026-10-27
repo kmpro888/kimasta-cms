@@ -98,7 +98,15 @@ final class PublicPageController implements RequestHandlerInterface
             }
         }
 
+        // Checked after the cache miss, not before: resolving the site costs a query, and a cached
+        // page must stay at zero. Deactivating a site purges its cache (see SiteController), so a
+        // cached page cannot outlive the status it was cached under.
         $site = $this->sites->resolveById($siteId);
+
+        if (!$site->isActive()) {
+            return new Response('Not found', 404, ['Content-Type' => 'text/plain; charset=utf-8']);
+        }
+
         $theme = $this->themes->activeFor($siteId);
 
         // Redirect before content: a moved permalink should win over a 404.

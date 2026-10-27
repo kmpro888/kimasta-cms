@@ -37,6 +37,9 @@ final class SiteService implements SiteServiceInterface
      */
     private array $memo = [];
 
+    /** The two statuses a site can have. Stated once so 'disabled' is a validation error. */
+    public const STATUSES = ['active', 'inactive'];
+
     public function __construct(
         private readonly SiteRepositoryInterface $sites,
         private readonly DomainRepositoryInterface $domains,
@@ -88,6 +91,36 @@ final class SiteService implements SiteServiceInterface
      *
      * @param array<string, mixed> $attributes
      */
+    /**
+     * Activate or deactivate a site.
+     *
+     * Deactivating also clears the site's page cache: the public controller checks the status before
+     * reading the cache, so this is belt and braces rather than the mechanism — but a purge means a
+     * reactivated site cannot resurrect a page from before it was switched off.
+     */
+    public function setStatus(int $siteId, string $status): SiteContextInterface
+    {
+        if (!in_array($status, self::STATUSES, true)) {
+            throw new \InvalidArgumentException('Unknown site status: ' . $status);
+        }
+
+        $site = $this->findById($siteId);
+
+        // SiteContextInterface exposes isActive(), not the raw string; comparing the two
+        // booleans keeps the frozen contract untouched.
+        if (($site->isActive() ? 'active' : 'inactive') === $status) {
+            return $site;
+        }
+
+        $this->sites->updateStatus($siteId, $status);
+
+        // The context is memoised for the life of the service, and the service lives as long as the
+        // container. Without this the caller gets the state from before the switch, which is how a
+        // deactivated site kept answering 200.
+        $this->memo = [];
+
+        return $this->findById($siteId);
+    }
     public function update(int $siteId, array $attributes): SiteContextInterface
     {
         $this->sites->update($siteId, $attributes);

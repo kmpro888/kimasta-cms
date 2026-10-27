@@ -36,6 +36,12 @@ final class FeedController implements RequestHandlerInterface
             throw HttpException::notFound();
         }
 
+        // A deactivated site does not serve its feed either: the same switch that hides its pages
+        // must hide the feed a reader would otherwise keep polling.
+        if (!$this->sites->resolveById($siteId)->isActive()) {
+            throw HttpException::notFound();
+        }
+
         $xml = $this->feed->read($siteId);
 
         if ($xml === null) {

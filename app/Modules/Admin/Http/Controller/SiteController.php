@@ -15,6 +15,7 @@ use CMS\Modules\Identity\Contracts\RoleServiceInterface;
 use CMS\Modules\Identity\Contracts\UserServiceInterface;
 use CMS\Modules\Identity\Exceptions\DuplicateUserException;
 use CMS\Modules\Identity\Support\PasswordPolicy;
+use CMS\Modules\Cache\Contracts\PageCacheInterface;
 use CMS\Modules\Site\Contracts\SiteServiceInterface;
 use CMS\Modules\Site\Exceptions\DuplicateDomainException;
 use CMS\Modules\Site\Exceptions\InvalidHostException;
@@ -48,6 +49,7 @@ final class SiteController extends AdminController
         private readonly UserServiceInterface $users,
         private readonly TaxonomyServiceInterface $taxonomy,
         private readonly AuditLoggerInterface $audit,
+        private readonly PageCacheInterface $cache,
     ) {
         parent::__construct($view, $session, $csrf, $actors);
     }
@@ -157,6 +159,49 @@ final class SiteController extends AdminController
         return $this->redirect('/admin/sites');
     }
 
+    /**
+     * Switch a site on or off.
+     *
+     * Deactivating is the closest thing this platform has to "take the site down": the public
+     * controller answers 404 and the page cache is purged, while the admin stays reachable at the
+     * site's own domain so the operator can turn it back on.
+     */
+    public function status(Request $request): Response
+    {
+        $this->requireCapability($request, 'settings.update');
+
+        $siteId = $this->intParam($request, 'site_id');
+        $status = $this->stringParam($request, 'status');
+
+        try {
+            $site = $this->sites->setStatus($siteId, $status);
+        } catch (SiteNotFoundException) {
+            throw HttpException::notFound();
+        } catch (\InvalidArgumentException $exception) {
+            $this->flash('error', $exception->getMessage());
+
+            return $this->redirect('/admin/sites');
+        }
+
+        // The public controller checks status after the cache, so the entry has to go when the site
+        // is switched off: otherwise a page cached while it was active outlives the decision.
+        if (!$site->isActive()) {
+            $this->cache->flushSite($siteId);
+        }
+
+        $this->audit->record(
+            $siteId,
+            $this->actor($request),
+            'site.status_changed',
+            'site',
+            $siteId,
+            ['status' => $site->isActive() ? 'active' : 'inactive']
+        );
+
+        $this->flash('success', $site->name() . ' is now ' . ($site->isActive() ? 'active' : 'inactive') . '.');
+
+        return $this->redirect('/admin/sites');
+    }
     public function addDomain(Request $request): Response
     {
         $this->requireCapability($request, 'settings.update');

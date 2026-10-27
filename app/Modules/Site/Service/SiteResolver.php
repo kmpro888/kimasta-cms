@@ -89,17 +89,16 @@ final class SiteResolver implements SiteResolverInterface
             throw new SiteNotFoundException();
         }
 
-        if (isset($this->memo[$siteId])) {
-            return $this->memo[$siteId];
-        }
-
+        // Not memoised: a site's `status` can change while this process lives (an operator
+        // deactivates it, a CLI job reads it afterwards), and caching that state is exactly how a
+        // deactivated site kept answering 200. The host lookup is memoised; the mutable part is not.
         $site = $this->sites->findById($siteId);
 
         if ($site === null) {
             throw new SiteNotFoundException();
         }
 
-        return $this->memo[$siteId] = $site;
+        return $site;
     }
 
     public function siteIdFor(string $host): int

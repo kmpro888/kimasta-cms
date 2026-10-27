@@ -64,6 +64,12 @@ interface SiteServiceInterface
      *
      * @return list<string>
      */
+    /**
+     * Activate or deactivate a site. An inactive site answers 404 to public requests.
+     *
+     * @throws \\InvalidArgumentException for a status outside ctive / inactive`n     */
+    public function setStatus(int $siteId, string $status): SiteContextInterface;
+
     public function domains(int $siteId): array;
     public function addDomain(int $siteId, string $domain, bool $isPrimary = false): void;
 

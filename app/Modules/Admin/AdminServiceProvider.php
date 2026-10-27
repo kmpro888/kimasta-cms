@@ -215,6 +215,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
                 $c->get(UserServiceInterface::class),
                 $c->get(TaxonomyServiceInterface::class),
                 $c->get(AuditLoggerInterface::class),
+                $c->get(PageCacheInterface::class),
             )
         );
 
@@ -333,6 +334,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'GET', '/admin/audit', AuditController::class, 'index', $chain);
         $this->route($container, $router, 'GET', '/admin/sites', SiteController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/sites', SiteController::class, 'store', $chain);
+        $this->route($container, $router, 'POST', '/admin/sites/status', SiteController::class, 'status', $chain);
         $this->route($container, $router, 'POST', '/admin/sites/domain', SiteController::class, 'addDomain', $chain);
         $this->route($container, $router, 'POST', '/admin/sites/domain/remove', SiteController::class, 'removeDomain', $chain);
 
