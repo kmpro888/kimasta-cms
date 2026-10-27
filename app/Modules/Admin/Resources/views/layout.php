@@ -39,6 +39,11 @@ if ($actor !== null && $actor->can('users.read')) {
     $navItems['/admin/users'] = 'People';
 }
 
+if ($actor !== null && $actor->can('settings.update')) {
+    $navItems['/admin/redirects'] = 'Redirects';
+    $navItems['/admin/settings'] = 'Settings';
+}
+
 $isActive = static function (string $item) use ($path): bool {
     if ($item === '/admin') {
         return $path === '/admin';

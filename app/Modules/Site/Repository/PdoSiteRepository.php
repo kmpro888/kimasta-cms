@@ -130,6 +130,39 @@ final class PdoSiteRepository implements SiteRepositoryInterface
         );
     }
 
+    /**
+     * Update the editable site fields.
+     *
+     * An allow-list rather than "whatever the caller sent": `slug` and `primary_domain` are not in
+     * it, because changing the domain must move the domain mapping and regenerate the compiled map,
+     * and doing that silently here would be a trap.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    public function update(int $siteId, array $attributes): void
+    {
+        $columns = ['name', 'default_locale', 'timezone', 'base_url'];
+        $sets = [];
+        $bindings = ['id' => $siteId, 'updated_at' => $this->now()];
+
+        foreach ($columns as $column) {
+            if (array_key_exists($column, $attributes)) {
+                $sets[] = $column . ' = :' . $column;
+                $bindings[$column] = $attributes[$column];
+            }
+        }
+
+        if ($sets === []) {
+            return;
+        }
+
+        $sets[] = 'updated_at = :updated_at';
+
+        $this->connection->affect(
+            'UPDATE sites SET ' . implode(', ', $sets) . ' WHERE id = :id',
+            $bindings
+        );
+    }
     public function updateTheme(int $siteId, ?string $theme): void
     {
         $this->connection->affect(

@@ -36,6 +36,11 @@ interface SiteRepositoryInterface
         string $status,
     ): Site;
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    public function update(int $siteId, array $attributes): void;
+
     public function updateStatus(int $siteId, string $status): void;
 
     public function updateTheme(int $siteId, ?string $theme): void;

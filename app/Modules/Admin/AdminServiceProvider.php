@@ -14,12 +14,15 @@ use CMS\Modules\Admin\Http\Controller\CommentController;
 use CMS\Modules\Admin\Http\Controller\DashboardController;
 use CMS\Modules\Admin\Http\Controller\MediaController;
 use CMS\Modules\Admin\Http\Controller\NotificationController;
+use CMS\Modules\Admin\Http\Controller\RedirectController;
+use CMS\Modules\Admin\Http\Controller\SettingsController;
 use CMS\Modules\Admin\Http\Controller\UserController;
 use CMS\Modules\Admin\Http\Middleware\AdminAuthMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminContextMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminErrorMiddleware;
 use CMS\Modules\Admin\Support\AdminView;
 use CMS\Modules\Admin\Support\BlockFormCompiler;
+use CMS\Modules\Cache\Contracts\PageCacheInterface;
 use CMS\Modules\Comment\Contracts\CommentServiceInterface;
 use CMS\Modules\Content\Contracts\ContentQueryServiceInterface;
 use CMS\Modules\Content\Contracts\ContentServiceInterface;
@@ -31,9 +34,12 @@ use CMS\Modules\Identity\Contracts\RoleServiceInterface;
 use CMS\Modules\Identity\Contracts\UserServiceInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
 use CMS\Modules\Notification\Contracts\NotificationServiceInterface;
+use CMS\Modules\Seo\Contracts\RedirectServiceInterface;
 use CMS\Modules\Seo\Contracts\SeoServiceInterface;
 use CMS\Modules\Site\Contracts\SiteResolverInterface;
+use CMS\Modules\Site\Contracts\SiteServiceInterface;
 use CMS\Modules\Taxonomy\Contracts\TaxonomyServiceInterface;
+use CMS\Modules\Theme\Contracts\ThemeRegistryInterface;
 use CMS\Modules\Theme\Contracts\ViewRendererInterface;
 use CMS\Shared\Contracts\ConfigInterface;
 use CMS\Shared\Contracts\CsrfTokenManagerInterface;
@@ -128,6 +134,30 @@ final class AdminServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(
+            SettingsController::class,
+            static fn (Container $c): SettingsController => new SettingsController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(SiteServiceInterface::class),
+                $c->get(ThemeRegistryInterface::class),
+                $c->get(PageCacheInterface::class),
+            )
+        );
+
+        $container->singleton(
+            RedirectController::class,
+            static fn (Container $c): RedirectController => new RedirectController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(RedirectServiceInterface::class),
+            )
+        );
+
+        $container->singleton(
             UserController::class,
             static fn (Container $c): UserController => new UserController(
                 $c->get(AdminView::class),
@@ -195,6 +225,14 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/password', AuthController::class, 'changePassword', $chain);
 
         $this->route($container, $router, 'GET', '/admin', DashboardController::class, 'index', $chain);
+
+        $this->route($container, $router, 'GET', '/admin/settings', SettingsController::class, 'index', $chain);
+        $this->route($container, $router, 'POST', '/admin/settings', SettingsController::class, 'save', $chain);
+        $this->route($container, $router, 'POST', '/admin/settings/theme', SettingsController::class, 'theme', $chain);
+
+        $this->route($container, $router, 'GET', '/admin/redirects', RedirectController::class, 'index', $chain);
+        $this->route($container, $router, 'POST', '/admin/redirects', RedirectController::class, 'store', $chain);
+        $this->route($container, $router, 'POST', '/admin/redirects/delete', RedirectController::class, 'destroy', $chain);
 
         $this->route($container, $router, 'GET', '/admin/users', UserController::class, 'index', $chain);
         $this->route($container, $router, 'GET', '/admin/users/new', UserController::class, 'create', $chain);

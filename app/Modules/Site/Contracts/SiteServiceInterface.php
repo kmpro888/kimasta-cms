@@ -37,6 +37,13 @@ interface SiteServiceInterface
      * @throws \CMS\Modules\Site\Exceptions\InvalidHostException
      * @throws \CMS\Modules\Site\Exceptions\SiteNotFoundException
      */
+    /**
+     * Update the editable fields: name, default_locale, timezone, base_url.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    public function update(int $siteId, array $attributes): SiteContextInterface;
+
     public function addDomain(int $siteId, string $domain, bool $isPrimary = false): void;
 
     /**

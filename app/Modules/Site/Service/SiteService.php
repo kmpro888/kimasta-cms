@@ -76,6 +76,25 @@ final class SiteService implements SiteServiceInterface
         return $this->sites->all();
     }
 
+    /**
+     * Update the editable fields of a site.
+     *
+     * The memo is cleared and the row re-read, so a caller that changed the site and then asks for
+     * it does not receive the version from before the write.
+     *
+     * The domain is deliberately not editable here: moving it has to move the domain mapping and
+     * regenerate the compiled map, and the old domain stops resolving at once, which is not a
+     * change to offer behind a text field.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    public function update(int $siteId, array $attributes): SiteContextInterface
+    {
+        $this->sites->update($siteId, $attributes);
+        $this->memo = [];
+
+        return $this->findById($siteId);
+    }
     public function addDomain(int $siteId, string $domain, bool $isPrimary = false): void
     {
         $this->memo = [];
