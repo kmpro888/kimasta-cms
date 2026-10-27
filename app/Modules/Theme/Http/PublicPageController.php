@@ -142,6 +142,20 @@ final class PublicPageController implements RequestHandlerInterface
             }
         }
 
+        // Re-check after taking the lock. A wait here means another request was building this
+        // page; it has now released, so its result is in the cache and rendering it again would
+        // repeat identical work. Without this the lock only serialised the writes: every waiter
+        // still re-rendered, which looked protected because it was orderly.
+        if ($locked && $eligible) {
+            $recheck = $this->cache->get($siteId, $path);
+
+            if ($recheck !== null) {
+                $this->releaseLock($lockName);
+
+                return $this->html($recheck->html, 'HIT');
+            }
+        }
+
         try {
             $context = $content->type === 'page'
                 ? TemplateContext::page()
@@ -162,8 +176,8 @@ final class PublicPageController implements RequestHandlerInterface
             // the next request rather than frozen until the next edit.
             return $this->renderNotFound($site, $theme->name);
         } finally {
-            if ($this->lock !== null && $locked) {
-                $this->lock->release($lockName);
+            if ($locked) {
+                $this->releaseLock($lockName);
             }
         }
 
@@ -289,6 +303,35 @@ final class PublicPageController implements RequestHandlerInterface
             return null;
         }
 
+        // Only the canonical representation of a listing is cached. A page number
+        // or a search query shares the path but not the content.
+        $cacheable = !$this->hasVaryingQuery($request);
+
+        // The lock is taken *before* the render, not around the write. The expensive part of a
+        // cold archive is building it, and a lock held only for the write lets every waiter
+        // rebuild the same page — orderly, and useless.
+        $lockName = 'page:' . $siteId . ':' . sha1($path);
+        // No lock backend means nothing else can be competing: treat this request as the builder.
+        $locked = $cacheable && $this->lock === null;
+
+        if ($cacheable && $this->lock !== null) {
+            try {
+                $locked = $this->lock->acquire($lockName, 2);
+            } catch (Throwable) {
+                $locked = false;
+            }
+
+            if ($locked) {
+                $recheck = $this->cache->get($siteId, $path);
+
+                if ($recheck !== null) {
+                    $this->releaseLock($lockName);
+
+                    return $this->html($recheck->html, 'HIT');
+                }
+            }
+        }
+
         try {
             $result = $this->query->paginate($siteId, $criteria);
             $view = $this->viewModels->forListing(
@@ -303,47 +346,45 @@ final class PublicPageController implements RequestHandlerInterface
             $template = $this->templates->resolve($theme->name, $context);
             $html = $this->renderer->render($template, $view);
         } catch (Throwable) {
+            if ($locked) {
+                $this->releaseLock($lockName);
+            }
+
             return null;
         }
 
-        // Only the canonical representation of a listing is cached. A page number
-        // or a search query shares the path but not the content.
-        $cacheable = !$this->hasVaryingQuery($request);
+        if ($cacheable && $locked) {
+            $this->cache->put($siteId, $path, $html, [
+                CacheDependency::archive($siteId),
+                CacheDependency::theme($theme->name),
+                CacheDependency::settings($siteId),
+            ]);
 
-        if ($cacheable) {
-            // Same stampede policy as the single-content path: render always, write only
-            // when the lock was taken. Guarding one path and not the other would give a
-            // false sense of protection, and an archive is the more expensive of the two
-            // to rebuild under contention.
-            $lockName = 'page:' . $siteId . ':' . sha1($path);
-            $locked = $this->lock === null;
-
-            if ($this->lock !== null) {
-                try {
-                    $locked = $this->lock->acquire($lockName, 2);
-                } catch (Throwable) {
-                    $locked = false;
-                }
-            }
-
-            try {
-                if ($locked) {
-                    $this->cache->put($siteId, $path, $html, [
-                        CacheDependency::archive($siteId),
-                        CacheDependency::theme($theme->name),
-                        CacheDependency::settings($siteId),
-                    ]);
-                }
-            } finally {
-                if ($this->lock !== null && $locked) {
-                    $this->lock->release($lockName);
-                }
-            }
+            $this->releaseLock($lockName);
         }
 
         return $this->html($html, $cacheable ? 'MISS' : 'BYPASS');
     }
 
+    /**
+     * Release a page lock, tolerating a missing backend.
+     *
+     * The controller runs with no lock backend in tests and on installations that have not
+     * configured one, and the "no lock" case means "this request is the builder" — so the release
+     * path has to be a no-op rather than a fatal error on a null backend.
+     */
+    private function releaseLock(?string $name): void
+    {
+        if ($name === null || $this->lock === null) {
+            return;
+        }
+
+        try {
+            $this->lock->release($name);
+        } catch (Throwable) {
+            // A failed release must not fail the page; the lock expires with its own timeout.
+        }
+    }
     /**
      * Does this request carry a parameter that changes the response while the path
      * stays the same?
