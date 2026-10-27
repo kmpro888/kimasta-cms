@@ -15,6 +15,7 @@ use CMS\Modules\Analytics\Contracts\AnalyticsServiceInterface;
 use CMS\Modules\Cache\Contracts\PageCacheInterface;
 use CMS\Modules\Content\Contracts\ContentQueryServiceInterface;
 use CMS\Modules\Content\Contracts\ContentServiceInterface;
+use CMS\Modules\Identity\Contracts\PasswordResetServiceInterface;
 use CMS\Modules\Content\Contracts\ContentTypeRegistryInterface;
 use CMS\Modules\Content\Contracts\UrlGeneratorInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
@@ -29,6 +30,7 @@ use CMS\Modules\Theme\Contracts\ThemeRegistryInterface;
 use CMS\Modules\Theme\Contracts\ViewRendererInterface;
 use CMS\Modules\Theme\Http\PublicPageController;
 use CMS\Modules\Theme\Http\ThemeAssetController;
+use CMS\Modules\Theme\Http\PasswordResetController;
 use CMS\Modules\Theme\Http\PublicCommentController;
 use CMS\Modules\Theme\Rendering\PageViewModelFactory;
 use CMS\Modules\Theme\Service\TemplateResolver;
@@ -117,6 +119,14 @@ final class ThemeServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(
+            PasswordResetController::class,
+            static fn (Container $c): PasswordResetController => new PasswordResetController(
+                $c->get(SiteResolverInterface::class),
+                $c->get(PasswordResetServiceInterface::class),
+            )
+        );
+
+        $container->singleton(
             PublicCommentController::class,
             static fn (Container $c): PublicCommentController => new PublicCommentController(
                 $c->get(SiteResolverInterface::class),
@@ -145,6 +155,11 @@ final class ThemeServiceProvider implements ServiceProviderInterface
     // authorisation, the honeypot and the rate limit belong to one action, and the catch-all stays
     // a pure GET renderer. Registered before it, so the path cannot be swallowed.
     $router->post('/comment', PublicCommentController::class, 'public.comment');
+
+    // The public end of the administrator's reset link. Registered before the catch-all, and as
+    // explicit GET and POST routes so the theme never sees this path.
+    $router->get('/reset-password', PasswordResetController::class, 'public.reset.show');
+    $router->post('/reset-password', PasswordResetController::class, 'public.reset.consume');
 
     // One catch-all route renders every public page. The negative lookahead
         // keeps /api/ and /admin/ out of the theme entirely, so an unknown API
