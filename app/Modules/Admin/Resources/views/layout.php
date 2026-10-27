@@ -45,6 +45,7 @@ if ($actor !== null && $actor->can('settings.update')) {
     $navItems['/admin/plugins'] = $view->t('nav.plugins');
     $navItems['/admin/sites'] = $view->t('nav.sites');
     $navItems['/admin/settings'] = $view->t('nav.settings');
+    $navItems['/admin/audit'] = $view->t('nav.audit');
 }
 
 $isActive = static function (string $item) use ($path): bool {

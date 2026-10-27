@@ -8,6 +8,7 @@ use CMS\Core\Http\HttpException;
 use CMS\Core\Http\Request;
 use CMS\Core\Http\Response;
 use CMS\Modules\Admin\Http\AdminController;
+use CMS\Modules\Audit\Contracts\AuditLoggerInterface;
 use CMS\Modules\Admin\Support\AdminView;
 use CMS\Modules\Identity\Contracts\ActorProviderInterface;
 use CMS\Modules\Identity\Contracts\RoleServiceInterface;
@@ -46,6 +47,7 @@ final class SiteController extends AdminController
         private readonly RoleServiceInterface $roles,
         private readonly UserServiceInterface $users,
         private readonly TaxonomyServiceInterface $taxonomy,
+        private readonly AuditLoggerInterface $audit,
     ) {
         parent::__construct($view, $session, $csrf, $actors);
     }
@@ -148,6 +150,7 @@ final class SiteController extends AdminController
             }
         }
 
+        $this->audit->record($siteId, $this->actor($request), 'site.created', 'site', $siteId, ['name' => $name, 'domain' => $domain]);
         $this->flash('success', 'Created ' . $name . '. Sign in at http://' . $domain
             . '/admin/login as ' . $adminUser . '.');
 

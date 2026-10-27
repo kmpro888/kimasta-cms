@@ -21,12 +21,14 @@ use CMS\Modules\Admin\Http\Controller\PasswordResetAdminController;
 use CMS\Modules\Admin\Http\Controller\RedirectController;
 use CMS\Modules\Admin\Http\Controller\RevisionController;
 use CMS\Modules\Admin\Http\Controller\SettingsController;
+use CMS\Modules\Admin\Http\Controller\AuditController;
 use CMS\Modules\Admin\Http\Controller\SiteController;
 use CMS\Modules\Admin\Http\Controller\UserController;
 use CMS\Modules\Admin\Http\Middleware\AdminAuthMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminContextMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminErrorMiddleware;
 use CMS\Modules\Admin\Support\AdminView;
+use CMS\Modules\Audit\Contracts\AuditLoggerInterface;
 use CMS\Modules\Admin\Support\BlockFormCompiler;
 use CMS\Modules\Cache\Contracts\PageCacheInterface;
 use CMS\Modules\Comment\Contracts\CommentServiceInterface;
@@ -179,6 +181,17 @@ final class AdminServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(
+            AuditController::class,
+            static fn (Container $c): AuditController => new AuditController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(AuditLoggerInterface::class),
+            )
+        );
+
+        $container->singleton(
             PluginController::class,
             static fn (Container $c): PluginController => new PluginController(
                 $c->get(AdminView::class),
@@ -186,6 +199,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
                 $c->get(CsrfTokenManagerInterface::class),
                 $c->get(ActorProviderInterface::class),
                 $c->get(PluginManagerInterface::class),
+                $c->get(AuditLoggerInterface::class),
             )
         );
 
@@ -200,6 +214,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
                 $c->get(RoleServiceInterface::class),
                 $c->get(UserServiceInterface::class),
                 $c->get(TaxonomyServiceInterface::class),
+                $c->get(AuditLoggerInterface::class),
             )
         );
 
@@ -213,6 +228,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
                 $c->get(SiteServiceInterface::class),
                 $c->get(ThemeRegistryInterface::class),
                 $c->get(PageCacheInterface::class),
+                $c->get(AuditLoggerInterface::class),
             )
         );
 
@@ -236,6 +252,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
                 $c->get(ActorProviderInterface::class),
                 $c->get(UserServiceInterface::class),
                 $c->get(RoleServiceInterface::class),
+                $c->get(AuditLoggerInterface::class),
             )
         );
 
@@ -311,6 +328,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/plugins/activate', PluginController::class, 'activate', $chain);
         $this->route($container, $router, 'POST', '/admin/plugins/deactivate', PluginController::class, 'deactivate', $chain);
 
+        $this->route($container, $router, 'GET', '/admin/audit', AuditController::class, 'index', $chain);
         $this->route($container, $router, 'GET', '/admin/sites', SiteController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/sites', SiteController::class, 'store', $chain);
         $this->route($container, $router, 'POST', '/admin/sites/domain', SiteController::class, 'addDomain', $chain);

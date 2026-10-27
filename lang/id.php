@@ -20,6 +20,7 @@ return [
     'nav.ads' => 'Iklan',
     'nav.plugins' => 'Plugin',
     'nav.sites' => 'Situs',
+    'nav.audit' => 'Log audit',
     'nav.settings' => 'Pengaturan',
     'nav.sign_out' => 'Keluar',
 

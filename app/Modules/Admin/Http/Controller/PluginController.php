@@ -8,6 +8,7 @@ use CMS\Core\Http\HttpException;
 use CMS\Core\Http\Request;
 use CMS\Core\Http\Response;
 use CMS\Modules\Admin\Http\AdminController;
+use CMS\Modules\Audit\Contracts\AuditLoggerInterface;
 use CMS\Modules\Admin\Support\AdminView;
 use CMS\Modules\Identity\Contracts\ActorProviderInterface;
 use CMS\Modules\Plugin\Contracts\PluginManagerInterface;
@@ -37,6 +38,7 @@ final class PluginController extends AdminController
         CsrfTokenManagerInterface $csrf,
         ActorProviderInterface $actors,
         private readonly PluginManagerInterface $plugins,
+        private readonly AuditLoggerInterface $audit,
     ) {
         parent::__construct($view, $session, $csrf, $actors);
     }
@@ -60,6 +62,7 @@ final class PluginController extends AdminController
             throw HttpException::notFound();
         }
 
+        $this->audit->record($this->siteId($request), $this->actor($request), 'plugin.installed', 'plugin', null, ['plugin' => $name]);
         $this->flash('success', 'Installed ' . $name . '. Its migrations have run.');
 
         return $this->redirect('/admin/plugins');
@@ -78,6 +81,7 @@ final class PluginController extends AdminController
         }
 
         // Said plainly because it is true: uninstall removes the registration, not the data.
+        $this->audit->record($this->siteId($request), $this->actor($request), 'plugin.uninstalled', 'plugin', null, ['plugin' => $name]);
         $this->flash('success', 'Uninstalled ' . $name . '. Tables it created are left in the database.');
 
         return $this->redirect('/admin/plugins');
@@ -99,6 +103,7 @@ final class PluginController extends AdminController
             return $this->redirect('/admin/plugins');
         }
 
+        $this->audit->record($this->siteId($request), $this->actor($request), 'plugin.activated', 'plugin', null, ['plugin' => $name]);
         $this->flash('success', 'Activated on this site.');
 
         return $this->redirect('/admin/plugins');
@@ -116,6 +121,7 @@ final class PluginController extends AdminController
             throw HttpException::notFound();
         }
 
+        $this->audit->record($this->siteId($request), $this->actor($request), 'plugin.deactivated', 'plugin', null, ['plugin' => $name]);
         $this->flash('success', 'Deactivated on this site. It stays installed.');
 
         return $this->redirect('/admin/plugins');

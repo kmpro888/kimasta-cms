@@ -18,6 +18,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 use CMS\Core\Bootstrap\Application;
 use CMS\Modules\Advertising\AdvertisingServiceProvider;
 use CMS\Modules\Analytics\AnalyticsServiceProvider;
+use CMS\Modules\Audit\AuditServiceProvider;
 use CMS\Modules\Api\ApiServiceProvider;
 use CMS\Modules\Block\BlockServiceProvider;
 use CMS\Modules\Cache\CacheServiceProvider;
@@ -49,6 +50,7 @@ $application = Application::create(dirname(__DIR__));
 //    modules that emit them.
 $application->provider(new SiteServiceProvider());
 $application->provider(new IdentityServiceProvider());
+$application->provider(new AuditServiceProvider());
 $application->provider(new ContentServiceProvider());
 $application->provider(new MediaServiceProvider());
 $application->provider(new TaxonomyServiceProvider());

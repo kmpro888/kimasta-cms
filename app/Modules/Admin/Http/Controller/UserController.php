@@ -8,6 +8,7 @@ use CMS\Core\Http\HttpException;
 use CMS\Core\Http\Request;
 use CMS\Core\Http\Response;
 use CMS\Modules\Admin\Http\AdminController;
+use CMS\Modules\Audit\Contracts\AuditLoggerInterface;
 use CMS\Modules\Admin\Support\AdminView;
 use CMS\Modules\Identity\Contracts\ActorProviderInterface;
 use CMS\Modules\Identity\Contracts\RoleServiceInterface;
@@ -41,6 +42,7 @@ final class UserController extends AdminController
         ActorProviderInterface $actors,
         private readonly UserServiceInterface $users,
         private readonly RoleServiceInterface $roles,
+        private readonly AuditLoggerInterface $audit,
     ) {
         parent::__construct($view, $session, $csrf, $actors);
     }
@@ -107,6 +109,7 @@ final class UserController extends AdminController
 
         $this->applyRoles($request, (int) $user->id, $values['role_ids']);
 
+        $this->audit->record($this->siteId($request), $this->actor($request), 'user.created', 'user', (int) $user->id, ['username' => $values['username']]);
         $this->flash('success', 'Added ' . $values['username'] . '.');
 
         return $this->redirect('/admin/users');
@@ -175,6 +178,7 @@ final class UserController extends AdminController
             return $this->form($request, $user, $values, ['role_ids' => [$rolesError]], 409);
         }
 
+        $this->audit->record($this->siteId($request), $this->actor($request), 'user.updated', 'user', $userId, ['username' => $values['username'] ?? '']);
         $this->flash('success', 'Saved.');
 
         return $this->redirect('/admin/users/' . $userId);
@@ -199,6 +203,9 @@ final class UserController extends AdminController
 
         $this->users->delete((int) $user->id, $this->siteId($request));
 
+        // Recorded after the delete, against the id that no longer exists: the log keeps the
+        // subject even though the row is gone.
+        $this->audit->record($this->siteId($request), $this->actor($request), 'user.deleted', 'user', (int) $user->id, ['username' => $user->username]);
         $this->flash('success', 'Deleted ' . $user->username . '.');
 
         return $this->redirect('/admin/users');

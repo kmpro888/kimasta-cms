@@ -7,6 +7,7 @@ namespace CMS\Modules\Admin\Http\Controller;
 use CMS\Core\Http\Request;
 use CMS\Core\Http\Response;
 use CMS\Modules\Admin\Http\AdminController;
+use CMS\Modules\Audit\Contracts\AuditLoggerInterface;
 use CMS\Modules\Admin\Support\AdminView;
 use CMS\Modules\Cache\Contracts\PageCacheInterface;
 use CMS\Modules\Identity\Contracts\ActorProviderInterface;
@@ -44,6 +45,7 @@ final class SettingsController extends AdminController
         private readonly SiteServiceInterface $sites,
         private readonly ThemeRegistryInterface $themes,
         private readonly PageCacheInterface $cache,
+        private readonly AuditLoggerInterface $audit,
     ) {
         parent::__construct($view, $session, $csrf, $actors);
     }
@@ -110,6 +112,7 @@ final class SettingsController extends AdminController
         // Every page carries at least one of these values.
         $this->cache->flushSite($siteId);
 
+        $this->audit->record($this->siteId($request), $this->actor($request), 'settings.updated', 'site', $this->siteId($request));
         $this->flash('success', 'Settings saved. The page cache was cleared.');
 
         return $this->redirect('/admin/settings');

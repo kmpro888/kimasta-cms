@@ -22,6 +22,7 @@ return [
     'nav.ads' => 'Ads',
     'nav.plugins' => 'Plugins',
     'nav.sites' => 'Sites',
+    'nav.audit' => 'Audit log',
     'nav.settings' => 'Settings',
     'nav.sign_out' => 'Sign out',
 
