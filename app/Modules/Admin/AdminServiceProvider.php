@@ -8,9 +8,11 @@ use CMS\Core\Bootstrap\ServiceProviderInterface;
 use CMS\Core\Container\Container;
 use CMS\Core\Routing\Router;
 use CMS\Core\Security\RateLimiter;
+use CMS\Modules\Admin\Http\Controller\AdController;
 use CMS\Modules\Admin\Http\Controller\AuthController;
 use CMS\Modules\Admin\Http\Controller\ContentController;
 use CMS\Modules\Admin\Http\Controller\CommentController;
+use CMS\Modules\Advertising\Contracts\AdvertisingServiceInterface;
 use CMS\Modules\Admin\Http\Controller\DashboardController;
 use CMS\Modules\Admin\Http\Controller\MediaController;
 use CMS\Modules\Admin\Http\Controller\NotificationController;
@@ -136,6 +138,18 @@ final class AdminServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(
+            AdController::class,
+            static fn (Container $c): AdController => new AdController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(AdvertisingServiceInterface::class),
+                $c->get(PageCacheInterface::class),
+            )
+        );
+
+        $container->singleton(
             PluginController::class,
             static fn (Container $c): PluginController => new PluginController(
                 $c->get(AdminView::class),
@@ -238,6 +252,11 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/password', AuthController::class, 'changePassword', $chain);
 
         $this->route($container, $router, 'GET', '/admin', DashboardController::class, 'index', $chain);
+
+        $this->route($container, $router, 'GET', '/admin/ads', AdController::class, 'index', $chain);
+        $this->route($container, $router, 'POST', '/admin/ads', AdController::class, 'store', $chain);
+        $this->route($container, $router, 'POST', '/admin/ads/toggle', AdController::class, 'toggle', $chain);
+        $this->route($container, $router, 'POST', '/admin/ads/delete', AdController::class, 'destroy', $chain);
 
         $this->route($container, $router, 'GET', '/admin/plugins', PluginController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/plugins/install', PluginController::class, 'install', $chain);
