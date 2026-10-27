@@ -63,10 +63,33 @@ final class PdoRedirectRepository implements RedirectRepositoryInterface
         ) > 0;
     }
 
+    /**
+     * Fold a batch of counted hits into the row.
+     *
+     * Called by cron, never from a page view: one statement per redirect per flush instead of one
+     * per visitor.
+     */
+    public function incrementHits(int $siteId, string $sourcePath, int $by): void
+    {
+        if ($by <= 0) {
+            return;
+        }
+
+        $this->connection->statement(
+            'UPDATE redirects SET hit_count = hit_count + :hits, updated_at = :updated_at '
+            . 'WHERE site_id = :site_id AND source_path = :source_path',
+            [
+                'hits' => $by,
+                'updated_at' => (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s'),
+                'site_id' => $siteId,
+                'source_path' => $sourcePath,
+            ]
+        );
+    }
     public function listForSite(int $siteId): array
     {
         $rows = $this->connection->select(
-            'SELECT source_path, target_url, status_code FROM redirects '
+            'SELECT source_path, target_url, status_code, hit_count FROM redirects '
             . 'WHERE site_id = :site_id ORDER BY source_path ASC',
             ['site_id' => $siteId]
         );
@@ -75,6 +98,7 @@ final class PdoRedirectRepository implements RedirectRepositoryInterface
             'source_path' => (string) $row['source_path'],
             'target_url' => (string) $row['target_url'],
             'status_code' => (int) $row['status_code'],
+            'hit_count' => (int) $row['hit_count'],
         ], $rows);
     }
 }

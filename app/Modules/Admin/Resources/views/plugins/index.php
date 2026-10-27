@@ -31,6 +31,10 @@ $csrf = $view->get('csrf');
                     <strong><?= $e($manifest->title) ?></strong>
                     <span class="muted"><code><?= $e($manifest->name) ?></code> <?= $e($manifest->version) ?></span>
 
+                    <?php if ($row['outdated']): ?>
+                        <span class="badge badge--published">Update available: <?= $e((string) $row['installedVersion']) ?> &rarr; <?= $e($manifest->version) ?></span>
+                    <?php endif; ?>
+
                     <?php if ($row['activeHere']): ?>
                         <span class="badge badge--published">Active here</span>
                     <?php elseif ($row['installed']): ?>
@@ -65,6 +69,14 @@ $csrf = $view->get('csrf');
                             <button class="button button--small" type="submit">Install</button>
                         </form>
                     <?php else: ?>
+                        <?php if ($row['outdated']): ?>
+                            <form method="post" action="/admin/plugins/update" class="inline"
+                                  data-confirm="Update <?= $e($manifest->title) ?> from <?= $e((string) $row['installedVersion']) ?> to <?= $e($manifest->version) ?>? Its new migrations run first.">
+                                <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
+                                <input type="hidden" name="name" value="<?= $e($manifest->name) ?>">
+                                <button class="button button--small button--primary" type="submit">Update</button>
+                            </form>
+                        <?php endif; ?>
                         <?php if ($row['activeHere']): ?>
                             <form method="post" action="/admin/plugins/deactivate" class="inline">
                                 <input type="hidden" name="_token" value="<?= $e($csrf) ?>">

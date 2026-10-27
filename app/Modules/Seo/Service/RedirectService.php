@@ -8,6 +8,7 @@ use CMS\Modules\Seo\Contracts\RedirectServiceInterface;
 use CMS\Modules\Seo\Exceptions\InvalidRedirectException;
 use CMS\Modules\Seo\Exceptions\RedirectLoopException;
 use CMS\Modules\Seo\Repository\RedirectRepositoryInterface;
+use CMS\Modules\Seo\Support\RedirectHitCounter;
 
 /**
  * Redirect management with loop protection.
@@ -19,7 +20,10 @@ final class RedirectService implements RedirectServiceInterface
 {
     private const ALLOWED_STATUS = [301, 302, 307, 308];
 
-    public function __construct(private readonly RedirectRepositoryInterface $redirects)
+    public function __construct(
+        private readonly RedirectRepositoryInterface $redirects,
+        private readonly RedirectHitCounter $hits,
+    )
     {
     }
 
@@ -82,6 +86,36 @@ final class RedirectService implements RedirectServiceInterface
         $this->redirects->put($siteId, $source, $target, $statusCode);
     }
 
+    /**
+     * Count a redirect without touching the database.
+     *
+     * One appended line; `flushHits()` folds them in later. See `RedirectHitCounter` for why.
+     */
+    public function recordHit(int $siteId, string $path): void
+    {
+        $this->hits->record($siteId, $path);
+    }
+
+    /**
+     * Fold pending hits into `redirects.hit_count`.
+     *
+     * @return array{paths: int, hits: int}
+     */
+    public function flushHits(int $siteId): array
+    {
+        $counts = $this->hits->drain($siteId);
+
+        foreach ($counts as $path => $hits) {
+            $this->redirects->incrementHits($siteId, $path, $hits);
+        }
+
+        return ['paths' => count($counts), 'hits' => array_sum($counts)];
+    }
+
+    public function pendingHits(int $siteId): int
+    {
+        return $this->hits->pending($siteId);
+    }
     public function delete(int $siteId, string $sourcePath): bool
     {
         return $this->redirects->delete($siteId, $this->normalizePath($sourcePath));

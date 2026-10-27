@@ -24,5 +24,7 @@ interface RedirectRepositoryInterface
     /**
      * @return list<array{source_path: string, target_url: string, status_code: int}>
      */
+    public function incrementHits(int $siteId, string $sourcePath, int $by): void;
+
     public function listForSite(int $siteId): array;
 }

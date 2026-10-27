@@ -325,6 +325,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'GET', '/admin/plugins', PluginController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/plugins/install', PluginController::class, 'install', $chain);
         $this->route($container, $router, 'POST', '/admin/plugins/uninstall', PluginController::class, 'uninstall', $chain);
+        $this->route($container, $router, 'POST', '/admin/plugins/update', PluginController::class, 'update', $chain);
         $this->route($container, $router, 'POST', '/admin/plugins/activate', PluginController::class, 'activate', $chain);
         $this->route($container, $router, 'POST', '/admin/plugins/deactivate', PluginController::class, 'deactivate', $chain);
 
@@ -340,6 +341,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
 
         $this->route($container, $router, 'GET', '/admin/redirects', RedirectController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/redirects', RedirectController::class, 'store', $chain);
+        $this->route($container, $router, 'POST', '/admin/redirects/import', RedirectController::class, 'import', $chain);
         $this->route($container, $router, 'POST', '/admin/redirects/delete', RedirectController::class, 'destroy', $chain);
 
         $this->route($container, $router, 'GET', '/admin/users', UserController::class, 'index', $chain);

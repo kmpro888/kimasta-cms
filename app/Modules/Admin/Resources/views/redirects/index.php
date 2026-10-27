@@ -74,6 +74,7 @@ $csrf = $view->get('csrf');
             <th scope="col">Old path</th>
             <th scope="col">Goes to</th>
             <th scope="col">Code</th>
+            <th scope="col">Hits</th>
             <th scope="col"><span class="visually-hidden">Actions</span></th>
         </tr>
         </thead>
@@ -87,6 +88,7 @@ $csrf = $view->get('csrf');
                 <td><code><?= $e($source) ?></code></td>
                 <td><code><?= $e($row['target_url'] ?? '') ?></code></td>
                 <td class="muted"><?= $e($row['status_code'] ?? '') ?></td>
+                <td class="muted"><?= $e($row['hit_count'] ?? 0) ?></td>
                 <td>
                     <form method="post" action="/admin/redirects/delete" class="inline">
                         <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
@@ -99,3 +101,29 @@ $csrf = $view->get('csrf');
         </tbody>
     </table>
 <?php endif; ?>
+
+<div class="panel">
+    <h2 class="panel__title">Import a CSV</h2>
+    <p class="hint">
+        Columns: <code>source, target, status</code>. A header row is skipped. Rows that are not a
+        valid redirect are reported, not silently dropped.
+    </p>
+
+    <form method="post" action="/admin/redirects/import" enctype="multipart/form-data">
+        <input type="hidden" name="_token" value="<?= $e($csrf) ?>">
+        <label class="field">
+            <span class="field__label">CSV file</span>
+            <input class="field__input" type="file" name="csv" accept=".csv,text/csv" required>
+        </label>
+        <div class="actions">
+            <button class="button" type="submit">Import</button>
+        </div>
+    </form>
+</div>
+
+<p class="hint">
+    <?= $e((int) $view->get('pending', 0)) ?> hit(s) counted and waiting for the cron flush.
+    Hits are written to a file per visit and folded into the totals here by
+    <code>bin/cron.php</code> — a database write on every redirect is exactly the load this project
+    does not take.
+</p>

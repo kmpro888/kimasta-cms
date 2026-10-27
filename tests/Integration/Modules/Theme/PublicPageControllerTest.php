@@ -167,7 +167,11 @@ final class PublicPageControllerTest extends ModuleDatabaseTestCase
         $events = new RecordingEventDispatcher();
         $this->invalidation = new CacheInvalidationService($this->pages, $events);
 
-        $this->redirects = new RedirectService(new PdoRedirectRepository($this->db));
+        // The counter is part of the redirect service now; these tests never exercise counting.
+        $this->redirects = new RedirectService(
+            new PdoRedirectRepository($this->db),
+            new \CMS\Modules\Seo\Support\RedirectHitCounter($this->tempDir . '/redirect-hits')
+        );
 
         $this->controller = new PublicPageController(
             $this->resolver,

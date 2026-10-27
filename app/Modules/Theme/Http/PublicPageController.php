@@ -105,6 +105,10 @@ final class PublicPageController implements RequestHandlerInterface
         $redirect = $this->redirects->resolve($siteId, $path);
 
         if ($redirect !== null) {
+            // Counted in a file, not the database: a write per visitor is what this project forbids.
+            // in/cron.php folds the lines into hit_count.
+            $this->redirects->recordHit($siteId, $path);
+
             return new RedirectResponse($redirect['target_url'], $redirect['status_code']);
         }
 

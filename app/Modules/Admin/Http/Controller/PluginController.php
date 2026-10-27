@@ -14,6 +14,7 @@ use CMS\Modules\Identity\Contracts\ActorProviderInterface;
 use CMS\Modules\Plugin\Contracts\PluginManagerInterface;
 use CMS\Modules\Plugin\Exceptions\PluginNotFoundException;
 use CMS\Modules\Plugin\Exceptions\PluginNotInstalledException;
+use CMS\Modules\Plugin\Exceptions\PluginUpToDateException;
 use CMS\Shared\Contracts\CsrfTokenManagerInterface;
 use CMS\Shared\Contracts\SessionInterface;
 
@@ -87,6 +88,37 @@ final class PluginController extends AdminController
         return $this->redirect('/admin/plugins');
     }
 
+    /**
+     * Bring an installed plugin up to the version on disk.
+     *
+     * The screen only offers this when there is something to do, and the manager still refuses a
+     * no-op: a button that succeeds at nothing teaches an operator to distrust the button.
+     */
+    public function update(Request $request): Response
+    {
+        $this->requireCapability($request, 'plugins.manage');
+
+        $name = $this->pluginName($request);
+
+        try {
+            $manifest = $this->plugins->update($name);
+        } catch (PluginNotFoundException) {
+            throw HttpException::notFound();
+        } catch (PluginNotInstalledException) {
+            $this->flash('error', 'Install ' . $name . ' before updating it.');
+
+            return $this->redirect('/admin/plugins');
+        } catch (PluginUpToDateException) {
+            $this->flash('error', $name . ' is already up to date.');
+
+            return $this->redirect('/admin/plugins');
+        }
+
+        $this->audit->record($this->siteId($request), $this->actor($request), 'plugin.updated', 'plugin', null, ['plugin' => $name, 'version' => $manifest->version]);
+        $this->flash('success', 'Updated ' . $name . ' to ' . $manifest->version . '.');
+
+        return $this->redirect('/admin/plugins');
+    }
     public function activate(Request $request): Response
     {
         $this->requireCapability($request, 'plugins.manage');
@@ -132,6 +164,8 @@ final class PluginController extends AdminController
         $siteId = $this->siteId($request);
         $manifests = $this->plugins->discover();
         $state = $this->plugins->state();
+        // Installed plugins with a newer version on disk; the screen shows the button only for these.
+        $updates = $this->plugins->updates();
 
         $rows = [];
 
@@ -144,6 +178,9 @@ final class PluginController extends AdminController
                 'installed' => (bool) ($status['installed'] ?? false),
                 'activeHere' => in_array($siteId, $activeSites, true),
                 'activeSites' => count($activeSites),
+                // The version recorded at install time, against the version on disk.
+                'installedVersion' => $updates[$name]['installed'] ?? null,
+                'outdated' => isset($updates[$name]),
             ];
         }
 

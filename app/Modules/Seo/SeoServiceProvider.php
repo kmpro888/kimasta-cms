@@ -30,6 +30,8 @@ use CMS\Modules\Seo\Repository\RedirectRepositoryInterface;
 use CMS\Modules\Seo\Repository\SeoRepositoryInterface;
 use CMS\Modules\Seo\Service\BreadcrumbService;
 use CMS\Modules\Seo\Service\RedirectService;
+use CMS\Modules\Cache\CacheServiceProvider;
+use CMS\Modules\Seo\Support\RedirectHitCounter;
 use CMS\Modules\Seo\Service\SeoService;
 use CMS\Modules\Seo\Service\FeedService;
 use CMS\Modules\Seo\Service\SitemapService;
@@ -94,9 +96,16 @@ final class SeoServiceProvider implements ServiceProviderInterface
 
         $container->singleton(
             RedirectServiceInterface::class,
-            static fn (Container $c): RedirectServiceInterface => new RedirectService(
-                $c->get(RedirectRepositoryInterface::class)
-            )
+            static function (Container $c): RedirectServiceInterface {
+                // Beside the cache, like the rate limiter: one writable directory the operator
+                // already has to back up or exclude.
+                $root = CacheServiceProvider::cacheRoot($c->get(ConfigInterface::class));
+
+                return new RedirectService(
+                    $c->get(RedirectRepositoryInterface::class),
+                    new RedirectHitCounter($root . DIRECTORY_SEPARATOR . 'redirect-hits')
+                );
+            }
         );
 
         $container->singleton(

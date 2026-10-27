@@ -51,6 +51,11 @@ final class RedirectServiceTest extends TestCase
                 return true;
             }
 
+            public function incrementHits(int $siteId, string $sourcePath, int $by): void
+            {
+                // The unit tests do not exercise counting; the integration test does.
+            }
+
             public function listForSite(int $siteId): array
             {
                 $list = [];
@@ -67,7 +72,11 @@ final class RedirectServiceTest extends TestCase
             }
         };
 
-        return new RedirectService($repository);
+        // The counter needs a writable directory; it is never used by these assertions.
+        return new RedirectService(
+            $repository,
+            new \CMS\Modules\Seo\Support\RedirectHitCounter(sys_get_temp_dir() . '/cms_redirect_hits_test')
+        );
     }
 
     #[Test]

@@ -21,6 +21,7 @@ declare(strict_types=1);
 use CMS\Core\Filesystem\FileLock;
 use CMS\Modules\Editorial\Contracts\SchedulerServiceInterface;
 use CMS\Modules\Notification\Contracts\NotificationServiceInterface;
+use CMS\Modules\Seo\Contracts\RedirectServiceInterface;
 use CMS\Modules\Seo\Contracts\SitemapServiceInterface;
 use CMS\Modules\Site\Contracts\SiteServiceInterface;
 use CMS\Shared\Contracts\ClockInterface;
@@ -92,6 +93,32 @@ try {
     } catch (Throwable $exception) {
         $exitCode = 1;
         fwrite(STDERR, 'Notification outbox failed: ' . $exception->getMessage() . PHP_EOL);
+    }
+
+    // Job: fold counted redirect hits into the database.
+    //
+    // The redirect path appends a line to a file instead of writing a row per visitor. This job is
+    // the other half of that trade: it is the only place `redirects.hit_count` is incremented, so
+    // the count is eventually consistent and a crash can lose the lines not yet folded in.
+    try {
+        /** @var SiteServiceInterface $sites */
+        $sites = $container->get(SiteServiceInterface::class);
+        /** @var RedirectServiceInterface $redirects */
+        $redirects = $container->get(RedirectServiceInterface::class);
+
+        $paths = 0;
+        $hits = 0;
+
+        foreach ($sites->all() as $site) {
+            $flushed = $redirects->flushHits($site->id());
+            $paths += $flushed['paths'];
+            $hits += $flushed['hits'];
+        }
+
+        fwrite(STDOUT, sprintf("Redirect hits: %d hit(s) across %d path(s).\n", $hits, $paths));
+    } catch (Throwable $exception) {
+        $exitCode = 1;
+        fwrite(STDERR, 'Redirect hit flush failed: ' . $exception->getMessage() . PHP_EOL);
     }
 
     // Job: regenerate the sitemap for every site.

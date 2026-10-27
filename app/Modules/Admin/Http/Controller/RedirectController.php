@@ -89,6 +89,92 @@ final class RedirectController extends AdminController
     }
 
     /**
+     * Import a CSV of redirects.
+     *
+     * The column order is `source, target, status`. A header row is skipped by **content**, not by
+     * position, so a file without one still works. Rows are validated one at a time and the report
+     * says how many were stored and how many were refused, with the first few reasons: an importer
+     * that silently drops half a file is worse than no importer.
+     */
+    public function import(Request $request): Response
+    {
+        $this->requireCapability($request, 'settings.update');
+
+        $upload = $request->file('csv');
+
+        if ($upload === null || (int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            $this->flash('error', 'Choose a CSV file to import.');
+
+            return $this->redirect('/admin/redirects');
+        }
+
+        $path = (string) ($upload['tmp_name'] ?? '');
+
+        if ($path === '' || !is_file($path)) {
+            $this->flash('error', 'The uploaded file could not be read.');
+
+            return $this->redirect('/admin/redirects');
+        }
+
+        if ((int) ($upload['size'] ?? 0) > 2 * 1024 * 1024) {
+            $this->flash('error', 'That file is larger than 2 MB. Split it.');
+
+            return $this->redirect('/admin/redirects');
+        }
+
+        $siteId = $this->siteId($request);
+        $stored = 0;
+        $skipped = [];
+        $line = 0;
+
+        $handle = fopen($path, 'rb');
+
+        if ($handle === false) {
+            $this->flash('error', 'The uploaded file could not be read.');
+
+            return $this->redirect('/admin/redirects');
+        }
+
+        while (($row = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
+            $line++;
+
+            // fgetcsv returns [null] for a blank line.
+            if ($row === [null] || count(array_filter($row, static fn ($v): bool => trim((string) $v) !== '')) === 0) {
+                continue;
+            }
+
+            $source = trim((string) ($row[0] ?? ''));
+            $target = trim((string) ($row[1] ?? ''));
+            $status = (int) trim((string) ($row[2] ?? '301'));
+
+            if ($line === 1 && (str_starts_with(strtolower($source), 'source') || str_starts_with(strtolower($source), 'from'))) {
+                continue;
+            }
+
+            try {
+                $this->redirects->store($siteId, $source, $target, $status === 0 ? 301 : $status);
+                $stored++;
+            } catch (InvalidRedirectException|RedirectLoopException $exception) {
+                if (count($skipped) < 5) {
+                    $skipped[] = 'line ' . $line . ': ' . $exception->getMessage();
+                }
+            }
+        }
+
+        fclose($handle);
+
+        $message = 'Imported ' . $stored . ' redirect(s).';
+
+        if ($skipped !== []) {
+            $message .= ' Skipped ' . count($skipped) . ': ' . implode(' ', $skipped);
+        }
+
+        $this->flash($stored > 0 ? 'success' : 'error', $message);
+
+        return $this->redirect('/admin/redirects');
+    }
+
+    /**
      * @param array<string, mixed> $values
      */
     private function page(Request $request, ?string $error = null, array $values = [], int $status = 200): Response
@@ -98,6 +184,9 @@ final class RedirectController extends AdminController
             'error' => $error,
             'values' => $values + ['source_path' => '', 'target_url' => '', 'status_code' => 301],
             'statuses' => [301, 302, 307, 308],
+            // Counted in a file until cron folds them in. Shown so an operator can tell "no hits
+            // yet" from "nobody has run cron".
+            'pending' => $this->redirects->pendingHits($this->siteId($request)),
         ], $status);
     }
 }

@@ -146,6 +146,12 @@ abstract class ModuleDatabaseTestCase extends DatabaseTestCase
     {
         $now = gmdate('Y-m-d H:i:s');
 
+        // A previous test that failed before its cleanup can leave this row behind, and the
+        // primary-domain unique key then makes every later setUp fail. Clearing it first makes
+        // the harness idempotent instead of order-dependent.
+        $this->db->statement('DELETE FROM sites WHERE primary_domain = :domain', ['domain' => $domain]);
+        $this->db->statement('DELETE FROM site_domains WHERE domain = :domain', ['domain' => $domain]);
+
         // Native prepared statements (EMULATE_PREPARES=false) forbid reusing the
         // same named placeholder twice, so created/updated get distinct names.
         return $this->db->insert(

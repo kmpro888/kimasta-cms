@@ -10,6 +10,7 @@ use CMS\Modules\Plugin\Contracts\PluginManagerInterface;
 use CMS\Modules\Plugin\Entity\PluginManifest;
 use CMS\Modules\Plugin\Exceptions\InvalidPluginManifestException;
 use CMS\Modules\Plugin\Exceptions\PluginNotInstalledException;
+use CMS\Modules\Plugin\Exceptions\PluginUpToDateException;
 use CMS\Modules\Plugin\Exceptions\PluginNotFoundException;
 use CMS\Modules\Plugin\Repository\PluginRepositoryInterface;
 use Throwable;
@@ -107,6 +108,62 @@ final class PluginManager implements PluginManagerInterface
         return $manifest;
     }
 
+    /**
+     * Bring an installed plugin to the version on disk.
+     *
+     * Migrations run before the version is recorded, for the same reason install does it that way:
+     * a half-applied schema must not be recorded as an update that happened. The migration ledger is
+     * per plugin and per file, so only the files that are new run — this is an update, not a
+     * reinstall.
+     */
+    public function update(string $name): PluginManifest
+    {
+        $manifest = $this->requireManifest($name);
+
+        if (!$this->repository->isInstalled($name)) {
+            throw new PluginNotInstalledException($name);
+        }
+
+        $installed = $this->repository->installedVersions()[$name] ?? '';
+
+        // Not an error to be at the same version? It is: the caller asked for an update that cannot
+        // do anything, and saying "done" would be a lie the operator could not see through.
+        if ($installed !== '' && version_compare($manifest->version, $installed, '<=')) {
+            throw new PluginUpToDateException($name, $installed, $manifest->version);
+        }
+
+        $this->migrations->run($name, $manifest->migrationsPath());
+        $this->repository->install($manifest->name, $manifest->version, $manifest->toArray());
+
+        return $manifest;
+    }
+
+    /**
+     * @return array<string, array{installed: string, available: string, manifest: PluginManifest}>
+     */
+    public function updates(): array
+    {
+        $installed = $this->repository->installedVersions();
+        $out = [];
+
+        foreach ($this->discover() as $name => $manifest) {
+            $current = $installed[$name] ?? null;
+
+            if ($current === null) {
+                continue;
+            }
+
+            if (version_compare($manifest->version, $current, '>')) {
+                $out[$name] = [
+                    'installed' => $current,
+                    'available' => $manifest->version,
+                    'manifest' => $manifest,
+                ];
+            }
+        }
+
+        return $out;
+    }
     public function uninstall(string $name): bool
     {
         $this->requireManifest($name);

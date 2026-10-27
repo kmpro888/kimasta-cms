@@ -29,6 +29,15 @@ interface RedirectServiceInterface
      */
     public function store(int $siteId, string $sourcePath, string $targetUrl, int $statusCode = 301): void;
 
+    public function recordHit(int $siteId, string $path): void;
+
+    /**
+     * @return array{paths: int, hits: int}
+     */
+    public function flushHits(int $siteId): array;
+
+    public function pendingHits(int $siteId): int;
+
     public function delete(int $siteId, string $sourcePath): bool;
 
     /**

@@ -45,6 +45,23 @@ interface PluginManagerInterface
     public function install(string $name): PluginManifest;
 
     /**
+     * Bring an installed plugin to the version on disk.
+     *
+     * Migrations run first, as on install: a schema that fails must not be recorded as an update.
+     *
+     * @throws \\CMS\\Modules\\Plugin\\Exceptions\\PluginNotInstalledException
+     * @throws \\CMS\\Modules\\Plugin\\Exceptions\\PluginUpToDateException
+     */
+    public function update(string $name): PluginManifest;
+
+    /**
+     * Installed plugins with a newer version on disk.
+     *
+     * @return array<string, array{installed: string, available: string, manifest: PluginManifest}>
+     */
+    public function updates(): array;
+
+    /**
      * Deactivate everywhere, then remove the record. A plugin's own data is left alone:
      * dropping tables is destructive and must not happen as a side effect of a toggle.
      *
