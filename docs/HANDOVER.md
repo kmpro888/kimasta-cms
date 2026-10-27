@@ -34,6 +34,9 @@ deletes media that nothing uses, and moderates comments (approve, spam, trash, d
 **A reader** sees approved comments on an article, but cannot post one: see the gap table below,
 which is the decision this platform is waiting on.
 
+**Both** see their own notifications at `/admin/notifications`; an administrator also sets which
+events reach email at `/admin/notifications/preferences`.
+
 **Everyone with an account** can change their own password and sign out.
 
 ---
@@ -82,7 +85,7 @@ Ordered by how much it matters, with the honest reason each exists.
 |---|---|---|
 | **CI has never run** | There is no git remote, so the workflow is written but unproven. The first push is its first test. | one push |
 | **No comment moderation screen** | Comments exist, the API can moderate them, there is no screen. | medium |
-| **No user or role management UI** | Adding an editor means a CLI snippet or direct SQL. | medium |
+| **No screen for redirects, users/roles, plugins or site settings** | Every one of those exists as a service and an API; each can only be driven from code or SQL today. | one session |
 | **A schedule cannot be cancelled** | Once scheduled, an article must be published or rescheduled; there is no `scheduled -> approved` edge. | small, needs a design decision |
 | **An API client can create a dateless scheduled article** | `POST /content/{id}/transitions` with `status=scheduled` leaves `scheduled_at` null, and the scheduler will never publish it. The admin screens no longer offer it. | small |
 | **Password change does not end other sessions** | A stolen session keeps working until it expires; there is no session table to revoke. | medium |
