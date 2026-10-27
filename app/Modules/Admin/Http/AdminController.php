@@ -9,6 +9,7 @@ use CMS\Core\Http\Request;
 use CMS\Core\Http\Response;
 use CMS\Modules\Admin\Support\AdminView;
 use CMS\Modules\Identity\Contracts\ActorProviderInterface;
+use CMS\Core\I18n\Translator;
 use CMS\Modules\Theme\Entity\ViewModel;
 use CMS\Shared\Contracts\ActorInterface;
 use CMS\Shared\Contracts\CsrfTokenManagerInterface;
@@ -110,7 +111,7 @@ abstract class AdminController
             'flash' => $this->takeFlash(),
             'errors' => [],
             'old' => [],
-        ], $data));
+        ], $data), new Translator($this->site($request)->defaultLocale()));
 
         return (new Response($this->view->render($view, $viewModel), $status, [
             'Content-Type' => 'text/html; charset=utf-8',

@@ -182,7 +182,7 @@ final class PageViewModelFactory
             // What the comment form posts back. Passed explicitly so the template does not have to
             // reach into a content entity it is otherwise not given.
             'comment_content_id' => (int) $content->id,
-        ]);
+        ], new \CMS\Core\I18n\Translator($site->defaultLocale()));
     }
 
     /**
@@ -233,7 +233,7 @@ final class PageViewModelFactory
             'seo_schema' => '',
             'breadcrumbs' => [],
             'breadcrumbs_html' => '',
-        ]);
+        ], new \CMS\Core\I18n\Translator($site->defaultLocale()));
     }
 
     /**
@@ -253,7 +253,7 @@ final class PageViewModelFactory
             'title' => 'Not found',
             'notice' => 'The page you are looking for does not exist.',
             'items' => [],
-        ]);
+        ], new \CMS\Core\I18n\Translator($site->defaultLocale()));
     }
 
     /**

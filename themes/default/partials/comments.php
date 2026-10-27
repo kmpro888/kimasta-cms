@@ -24,11 +24,11 @@ if ($count === 0 && !$open) {
 ?>
 <section class="comments" id="comments">
   <h2 class="comments__title">
-    <?= $view->e($count === 1 ? 'One comment' : $count . ' comments') ?>
+    <?= $view->e($count === 1 ? $view->t('public.comments.one') : $view->t('public.comments.many', ['count' => $count])) ?>
   </h2>
 
   <?php if ($count === 0): ?>
-    <p class="comments__empty">No comments yet.</p>
+    <p class="comments__empty"><?= $view->e($view->t('public.comments.empty')) ?></p>
   <?php else: ?>
     <ol class="comments__list">
       <?php foreach ($comments as $comment): ?>
@@ -58,35 +58,35 @@ if ($count === 0 && !$open) {
     <form class="comment-form" method="post" action="/comment">
       <input type="hidden" name="content_id" value="<?= $view->e($contentId) ?>">
 
-      <h3 class="comment-form__title">Leave a comment</h3>
+      <h3 class="comment-form__title"><?= $view->e($view->t('public.comments.form_title')) ?></h3>
 
       <p class="comment-form__field">
-        <label class="comment-form__label" for="comment-author">Your name</label>
+        <label class="comment-form__label" for="comment-author"><?= $view->e($view->t('public.comments.name')) ?></label>
         <input class="comment-form__input" id="comment-author" type="text" name="author_name"
                maxlength="190" required autocomplete="name">
       </p>
 
       <p class="comment-form__field">
-        <label class="comment-form__label" for="comment-body">Comment</label>
+        <label class="comment-form__label" for="comment-body"><?= $view->e($view->t('public.comments.body')) ?></label>
         <textarea class="comment-form__input comment-form__textarea" id="comment-body"
                   name="body" rows="5" required maxlength="5000"></textarea>
       </p>
 
       <?php /* Honeypot: hidden from people, filled by scripts. A real visitor never sees it. */ ?>
       <p class="comment-form__honeypot" aria-hidden="true">
-        <label for="comment-website">Website</label>
+        <label for="comment-website"><?= $view->e($view->t('public.comments.honeypot')) ?></label>
         <input id="comment-website" type="text" name="website" tabindex="-1" autocomplete="off">
       </p>
 
       <p class="comment-form__actions">
-        <button class="comment-form__submit" type="submit">Post comment</button>
+        <button class="comment-form__submit" type="submit"><?= $view->e($view->t('public.comments.submit')) ?></button>
       </p>
 
       <p class="comment-form__note">
-        Your comment appears once a moderator has approved it.
+        <?= $view->e($view->t('public.comments.awaiting')) ?>
       </p>
     </form>
   <?php elseif (!$open && $count > 0): ?>
-    <p class="comments__closed">Comments are closed.</p>
+    <p class="comments__closed"><?= $view->e($view->t('public.comments.closed')) ?></p>
   <?php endif; ?>
 </section>

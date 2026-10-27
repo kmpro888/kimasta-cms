@@ -23,27 +23,27 @@ $canReview = $actor !== null && $actor->can('workflow.review');
 $canModerate = $actor !== null && $actor->can('comment.moderate');
 
 $navItems = [
-    '/admin' => 'Dashboard',
-    '/admin/content' => 'Content',
-    '/admin/media' => 'Media',
-    '/admin/notifications' => 'Notifications',
+    '/admin' => $view->t('nav.dashboard'),
+    '/admin/content' => $view->t('nav.content'),
+    '/admin/media' => $view->t('nav.media'),
+    '/admin/notifications' => $view->t('nav.notifications'),
 ];
 
 // Only shown to someone who can act on it: a menu entry that leads to a 403 page is worse than
 // no menu entry.
 if ($canModerate) {
-    $navItems['/admin/comments'] = 'Comments';
+    $navItems['/admin/comments'] = $view->t('nav.comments');
 }
 
 if ($actor !== null && $actor->can('users.read')) {
-    $navItems['/admin/users'] = 'People';
+    $navItems['/admin/users'] = $view->t('nav.people');
 }
 
 if ($actor !== null && $actor->can('settings.update')) {
-    $navItems['/admin/redirects'] = 'Redirects';
-    $navItems['/admin/ads'] = 'Ads';
-    $navItems['/admin/plugins'] = 'Plugins';
-    $navItems['/admin/settings'] = 'Settings';
+    $navItems['/admin/redirects'] = $view->t('nav.redirects');
+    $navItems['/admin/ads'] = $view->t('nav.ads');
+    $navItems['/admin/plugins'] = $view->t('nav.plugins');
+    $navItems['/admin/settings'] = $view->t('nav.settings');
 }
 
 $isActive = static function (string $item) use ($path): bool {
@@ -81,7 +81,7 @@ $isActive = static function (string $item) use ($path): bool {
         <?php if ($actor !== null && $actor->authenticated()): ?>
             <form method="post" action="/admin/logout" class="inline">
                 <input type="hidden" name="_token" value="<?= $e($view->get('csrf')) ?>">
-                <button type="submit" class="link-button">Sign out</button>
+                <button type="submit" class="link-button"><?= $e($view->t('nav.sign_out')) ?></button>
             </form>
         <?php endif; ?>
     </div>

@@ -13,9 +13,13 @@ namespace CMS\Modules\Theme\Entity;
  */
 final class ViewModel
 {
-    /** @param array<string, mixed> $data */
-    public function __construct(private readonly array $data = [])
-    {
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function __construct(
+        private readonly array $data = [],
+        private readonly ?\CMS\Core\I18n\TranslatorInterface $translator = null,
+    ) {
     }
 
     public function get(string $key, mixed $default = null): mixed
@@ -41,7 +45,26 @@ final class ViewModel
      */
     public function with(array $extra): self
     {
-        return new self(array_replace($this->data, $extra));
+        return new self(array_replace($this->data, $extra), $this->translator);
+    }
+
+    /**
+     * A translated string for the site's locale.
+     *
+     * A template with no translator — and a key with no translation — returns the key itself, so a
+     * half-configured site shows `nav.content` rather than a blank menu. That is deliberately the
+     * less silent failure.
+     *
+     * @param array<string, string|int|float> $params
+     */
+    public function t(string $key, array $params = []): string
+    {
+        return $this->translator?->t($key, $params) ?? $key;
+    }
+
+    public function locale(): string
+    {
+        return $this->translator?->locale() ?? 'en';
     }
 
     /**
