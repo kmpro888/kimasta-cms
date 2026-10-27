@@ -18,6 +18,8 @@ use CMS\Modules\Content\Contracts\UrlGeneratorInterface;
 use CMS\Modules\Identity\Contracts\UserServiceInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
 use CMS\Modules\Seo\Contracts\BreadcrumbServiceInterface;
+use CMS\Modules\Seo\Http\FeedController;
+use CMS\Modules\Seo\Http\RobotsController;
 use CMS\Modules\Seo\Http\SitemapController;
 use CMS\Modules\Seo\Contracts\RedirectServiceInterface;
 use CMS\Modules\Seo\Contracts\SeoServiceInterface;
@@ -29,6 +31,7 @@ use CMS\Modules\Seo\Repository\SeoRepositoryInterface;
 use CMS\Modules\Seo\Service\BreadcrumbService;
 use CMS\Modules\Seo\Service\RedirectService;
 use CMS\Modules\Seo\Service\SeoService;
+use CMS\Modules\Seo\Service\FeedService;
 use CMS\Modules\Seo\Service\SitemapService;
 use CMS\Modules\Site\Contracts\SiteResolverInterface;
 use CMS\Modules\Site\Contracts\SiteServiceInterface;
@@ -107,6 +110,31 @@ final class SeoServiceProvider implements ServiceProviderInterface
 
         // The route resolves this class by name, so it needs an explicit binding.
         $container->singleton(
+            FeedService::class,
+            static fn (Container $c): FeedService => new FeedService(
+                $c->get(ContentQueryServiceInterface::class),
+                $c->get(UrlGeneratorInterface::class),
+                $c->get(SiteServiceInterface::class),
+                self::feedDirectory($c->get(ConfigInterface::class)),
+            )
+        );
+
+        $container->singleton(
+            FeedController::class,
+            static fn (Container $c): FeedController => new FeedController(
+                $c->get(SiteResolverInterface::class),
+                $c->get(FeedService::class),
+            )
+        );
+
+        $container->singleton(
+            RobotsController::class,
+            static fn (Container $c): RobotsController => new RobotsController(
+                $c->get(SiteResolverInterface::class),
+            )
+        );
+
+        $container->singleton(
             SitemapController::class,
             static fn (Container $c): SitemapController => new SitemapController(
                 $c->get(SiteResolverInterface::class),
@@ -123,6 +151,9 @@ final class SeoServiceProvider implements ServiceProviderInterface
         // Registered here rather than in the theme layer: the SEO module owns the sitemap,
         // and this provider boots before Theme's catch-all, so the exact path wins over
         // `/{path:.*}`.
+        $router->get('/robots.txt', RobotsController::class, 'seo.robots');
+        $router->get('/feed', FeedController::class, 'seo.feed');
+        $router->get('/feed.xml', FeedController::class, 'seo.feed.xml');
         $router->get('/sitemap.xml', SitemapController::class, 'seo.sitemap');
 
         // Shards of a split sitemap.
@@ -144,6 +175,15 @@ final class SeoServiceProvider implements ServiceProviderInterface
     /**
      * Absolute directory for generated sitemap artifacts.
      */
+    /**
+     * Absolute directory for generated feeds, beside the sitemaps and scoped the same way.
+     */
+    public static function feedDirectory(ConfigInterface $config): string
+    {
+        return dirname(self::sitemapDirectory($config)) . DIRECTORY_SEPARATOR . 'feeds'
+            . DIRECTORY_SEPARATOR . basename(self::sitemapDirectory($config));
+    }
+
     public static function sitemapDirectory(ConfigInterface $config): string
     {
         $storage = (string) $config->get('app.storage_path', '');

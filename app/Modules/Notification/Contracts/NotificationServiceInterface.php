@@ -28,6 +28,8 @@ interface NotificationServiceInterface
         'content.approved',
         'content.scheduled',
         'content.published',
+        // A visitor's comment waits for a moderator; the queue was silent until this existed.
+        'comment.created',
     ];
 
     public const CHANNEL_INTERNAL = 'internal';

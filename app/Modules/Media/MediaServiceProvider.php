@@ -12,6 +12,7 @@ use CMS\Modules\Media\Contracts\ImageProcessorInterface;
 use CMS\Modules\Media\Contracts\MediaRepositoryInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
 use CMS\Modules\Media\Contracts\MediaUsageCheckerInterface;
+use CMS\Modules\Media\Contracts\MediaVariantQueryInterface;
 use CMS\Modules\Media\Image\ImageProcessor;
 use CMS\Modules\Media\Repository\PdoMediaRepository;
 use CMS\Modules\Media\Service\MediaService;
@@ -67,6 +68,13 @@ final class MediaServiceProvider implements ServiceProviderInterface
                 (int) $config->get('media.max_upload_size', 10485760),
             );
         });
+
+        // The read-only companion. Same instance as the service, so nothing is constructed twice and
+        // the frozen interface stays exactly as it was.
+        $container->singleton(
+            MediaVariantQueryInterface::class,
+            static fn (Container $c): MediaVariantQueryInterface => $c->get(MediaServiceInterface::class),
+        );
     }
 
     public function boot(Container $container): void

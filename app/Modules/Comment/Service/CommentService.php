@@ -142,8 +142,15 @@ final class CommentService implements CommentServiceInterface
             [
                 'id' => $comment->id,
                 'content_id' => $contentId,
+                // The listener derives the tenant from the payload, exactly as the content events
+                // do; without this the notification handler saw site 0 and stopped.
+                'site_id' => $siteId,
                 'user_id' => $userId,
                 'parent_id' => $parentId,
+                // Carried on the event so a listener can build a notification without loading the
+                // comment again: the notification module has no business reading this table.
+                'author_name' => $authorName,
+                'excerpt' => mb_substr($body, 0, 120),
             ],
             $siteId,
             $this->clock,

@@ -25,6 +25,10 @@ echo $renderer->partial($themeName, 'head', $view);
     <?php if (is_array($featured) && (string) ($featured['url'] ?? '') !== ''): ?>
       <figure class="featured-image">
         <img src="<?= $view->e($featured['url']) ?>"
+       <?php if ((string) ($featured['srcset'] ?? '') !== ''): ?>
+       srcset="<?= $view->e($featured['srcset']) ?>"
+       sizes="(min-width: 48rem) 42rem, 100vw"
+       <?php endif; ?>
              alt="<?= $view->e($featured['alt'] ?? '') ?>"
              <?php if (($featured['width'] ?? null) !== null && ($featured['height'] ?? null) !== null): ?>
                width="<?= $view->e($featured['width']) ?>" height="<?= $view->e($featured['height']) ?>"

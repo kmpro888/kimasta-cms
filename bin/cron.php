@@ -119,6 +119,31 @@ try {
         fwrite(STDERR, 'Sitemap generation failed: ' . $exception->getMessage() . PHP_EOL);
     }
 
+    // Job: rebuild each site's RSS feed.
+    //
+    // Same reasoning as the sitemap: a public, cacheable document that a reader polls should be a
+    // file read, not a query. A request that finds no artifact builds one itself, so this job only
+    // has to keep it fresh.
+    try {
+        /** @var SiteServiceInterface $sites */
+        $sites = $container->get(SiteServiceInterface::class);
+
+        $feeds = $container->get(\CMS\Modules\Seo\Service\FeedService::class);
+
+        $items = 0;
+        $feedSites = 0;
+
+        foreach ($sites->all() as $site) {
+            $items += $feeds->generate($site->id());
+            $feedSites++;
+        }
+
+        fwrite(STDOUT, sprintf("Feed: %d item(s) across %d site(s).\n", $items, $feedSites));
+    } catch (Throwable $exception) {
+        $exitCode = 1;
+        fwrite(STDERR, 'Feed generation failed: ' . $exception->getMessage() . PHP_EOL);
+    }
+
     fwrite(STDOUT, "Cron finished.\n");
 } finally {
     $lock->release('cron');

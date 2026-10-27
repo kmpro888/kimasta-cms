@@ -8,6 +8,7 @@ use CMS\Core\Events\DomainEvent;
 use CMS\Modules\Media\Contracts\ImageProcessorInterface;
 use CMS\Modules\Media\Contracts\MediaRepositoryInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
+use CMS\Modules\Media\Contracts\MediaVariantQueryInterface;
 use CMS\Modules\Media\Contracts\MediaUsageCheckerInterface;
 use CMS\Modules\Media\Entity\Media;
 use CMS\Modules\Media\Entity\UploadedFile;
@@ -37,7 +38,7 @@ use CMS\Shared\Contracts\EventDispatcherInterface;
  * Files are stored under uploads/{site_id}/{year}/{month}/ so two tenants can
  * upload the same filename without colliding.
  */
-final class MediaService implements MediaServiceInterface
+final class MediaService implements MediaServiceInterface, MediaVariantQueryInterface
 {
     /** Extensions the pipeline will accept. */
     private const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -210,7 +211,28 @@ final class MediaService implements MediaServiceInterface
         return $this->media->listBySite($siteId, $limit, $offset);
     }
 
+    /**
+     * Variants that already exist on disk, smallest width first.
+     *
+     * Ordered here rather than by the caller, because a `srcset` is a hint list: an unsorted one
+     * makes the browser choose worse candidates.
+     *
+     * @return list<\CMS\Modules\Media\Entity\MediaVariant>
+     */
+    public function variantsFor(int $mediaId, int $siteId): array
+    {
+        $variants = $this->media->variantsFor($mediaId, $siteId);
+
+        usort(
+            $variants,
+            static fn ($a, $b): int => ((int) ($a->width ?? PHP_INT_MAX)) <=> ((int) ($b->width ?? PHP_INT_MAX))
+        );
+
+        return $variants;
+    }
+
     public function delete(int $id, int $siteId, bool $force = false): bool
+
     {
         $media = $this->media->findById($id, $siteId);
 

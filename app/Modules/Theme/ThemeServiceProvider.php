@@ -72,16 +72,22 @@ final class ThemeServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(PageViewModelFactory::class, static function (Container $c): PageViewModelFactory {
+            // Resolved once and reused: the factory's media dependency and its variant reader are
+            // the same object, and asking `has()` for the companion interface proved unreliable
+            // here -- it answered true to a probe while the closure still received null.
+            $media = $c->get(MediaServiceInterface::class);
+
             return new PageViewModelFactory(
                 $c->get(ContentQueryServiceInterface::class),
                 $c->get(UrlGeneratorInterface::class),
                 $c->get(SeoServiceInterface::class),
                 $c->get(BreadcrumbServiceInterface::class),
                 $c->get(TaxonomyServiceInterface::class),
-                $c->get(MediaServiceInterface::class),
+                $media,
                 $c->has(AdvertisingServiceInterface::class) ? $c->get(AdvertisingServiceInterface::class) : null,
                 $c->has(AnalyticsServiceInterface::class) ? $c->get(AnalyticsServiceInterface::class) : null,
                 $c->has(CommentServiceInterface::class) ? $c->get(CommentServiceInterface::class) : null,
+                $media instanceof MediaVariantQueryInterface ? $media : null,
             );
         });
 

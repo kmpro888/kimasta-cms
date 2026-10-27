@@ -34,6 +34,7 @@ final class NotificationController extends AdminController
         'content.approved' => 'Approved',
         'content.scheduled' => 'Scheduled',
         'content.published' => 'Published',
+        'comment.created' => 'New comment awaiting moderation',
     ];
 
     private const CHANNEL_LABELS = [

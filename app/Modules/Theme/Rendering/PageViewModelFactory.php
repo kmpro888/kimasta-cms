@@ -8,6 +8,7 @@ use CMS\Modules\Content\Contracts\ContentQueryServiceInterface;
 use CMS\Modules\Content\Entity\Content;
 use CMS\Modules\Content\Contracts\UrlGeneratorInterface;
 use CMS\Modules\Media\Contracts\MediaServiceInterface;
+use CMS\Modules\Media\Entity\Media;
 use CMS\Modules\Media\Exceptions\MediaNotFoundException;
 use CMS\Modules\Seo\Contracts\BreadcrumbServiceInterface;
 use CMS\Modules\Seo\Contracts\SeoServiceInterface;
@@ -42,6 +43,9 @@ final class PageViewModelFactory
         private readonly ?\CMS\Modules\Advertising\Contracts\AdvertisingServiceInterface $advertising = null,
         private readonly ?\CMS\Modules\Analytics\Contracts\AnalyticsServiceInterface $analytics = null,
         private readonly ?\CMS\Modules\Comment\Contracts\CommentServiceInterface $comments = null,
+        // Optional for the same reason as the three above: a site without media variants must still
+        // render its articles, just without a srcset.
+        private readonly ?\CMS\Modules\Media\Contracts\MediaVariantQueryInterface $variants = null,
     ) {
     }
 
@@ -289,7 +293,77 @@ final class PageViewModelFactory
             'alt' => $media->altText ?? '',
             'width' => $media->width,
             'height' => $media->height,
+            'srcset' => $this->srcsetFor($media, $baseUrl),
         ];
+    }
+
+    /**
+     * A `srcset` for the featured image, or an empty string when there is nothing to choose from.
+     *
+     * The upload pipeline has been producing thumbnail/medium/large variants all along; nothing ever
+     * printed them, so a phone downloaded the full-size file. Only variants in the **original's
+     * format** go in: a srcset is a list of candidates for one image, and mixing a WebP into a PNG
+     * list is a format switch disguised as a size switch.
+     *
+     * Widths must differ — three variants of a 24-pixel probe image are one candidate, not three.
+     */
+    private function srcsetFor(Media $media, string $baseUrl): string
+    {
+        // The variant reader and the media service are the same object by construction, so falling
+        // back to `$media` is exact rather than a guess -- and it keeps working when a container
+        // hands this factory only the frozen service.
+        $reader = $this->variants
+            ?? ($this->media instanceof \CMS\Modules\Media\Contracts\MediaVariantQueryInterface ? $this->media : null);
+
+        if ($reader === null || $media->width === null) {
+            return '';
+        }
+
+        try {
+            $variants = $reader->variantsFor((int) $media->id, (int) $media->siteId);
+        } catch (Throwable) {
+            return '';
+        }
+
+        $candidates = [];
+        $seenWidths = [];
+
+        foreach ($variants as $variant) {
+            if ($variant->width === null || $variant->width <= 0) {
+                continue;
+            }
+
+            if ($variant->format !== $media->extension) {
+                continue;
+            }
+
+            if (isset($seenWidths[$variant->width])) {
+                continue;
+            }
+
+            $seenWidths[$variant->width] = true;
+            $candidates[$variant->width] = $variant->url($baseUrl);
+        }
+
+        // The original is the largest candidate, and only useful if it is larger than the biggest
+        // variant; otherwise it is a duplicate width.
+        if ($media->width !== null && !isset($seenWidths[$media->width])) {
+            $candidates[$media->width] = rtrim($baseUrl, '/') . '/uploads/' . ltrim($media->path, '/');
+        }
+
+        if (count($candidates) < 2) {
+            return '';
+        }
+
+        ksort($candidates);
+
+        $parts = [];
+
+        foreach ($candidates as $width => $url) {
+            $parts[] = $url . ' ' . $width . 'w';
+        }
+
+        return implode(', ', $parts);
     }
 
     /**

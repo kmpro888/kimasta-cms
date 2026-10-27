@@ -77,9 +77,17 @@ final class NotificationService implements NotificationServiceInterface
             ? (int) $payload['site_id']
             : 0;
 
-        $contentId = isset($payload['id']) && is_numeric($payload['id'])
-            ? (int) $payload['id']
-            : 0;
+        // A comment event carries `content_id`; a content event carries `id`. One of the two is the
+        // article the notification is about.
+        $contentId = 0;
+
+        foreach (['content_id', 'id'] as $key) {
+            if (isset($payload[$key]) && is_numeric($payload[$key]) && (int) $payload[$key] > 0) {
+                $contentId = (int) $payload[$key];
+
+                break;
+            }
+        }
 
         if ($siteId <= 0 || $contentId <= 0) {
             return 0;
@@ -92,7 +100,7 @@ final class NotificationService implements NotificationServiceInterface
             return 0;
         }
 
-        $recipients = $this->recipientsFor($event, $siteId, $content);
+        $recipients = $this->recipientsFor($event, $siteId, $content, $payload);
 
         $created = 0;
 
@@ -100,8 +108,8 @@ final class NotificationService implements NotificationServiceInterface
             if ($this->isEnabled($siteId, $event, self::CHANNEL_INTERNAL)) {
                 $this->repository->create($siteId, $userId, [
                     'event' => $event,
-                    'title' => $this->titleFor($event, $content),
-                    'body' => $this->bodyFor($event, $content),
+                    'title' => $this->titleFor($event, $content, $payload),
+                    'body' => $this->bodyFor($event, $content, $payload),
                     'content_id' => $contentId,
                 ]);
 
@@ -121,8 +129,8 @@ final class NotificationService implements NotificationServiceInterface
             $this->repository->enqueue(
                 $siteId,
                 $user->email,
-                $this->titleFor($event, $content),
-                $this->bodyFor($event, $content),
+                $this->titleFor($event, $content, $payload),
+                $this->bodyFor($event, $content, $payload),
                 $event,
             );
 
@@ -232,13 +240,16 @@ final class NotificationService implements NotificationServiceInterface
      *
      * @return list<int>
      */
-    private function recipientsFor(string $event, int $siteId, Content $content): array
+    private function recipientsFor(string $event, int $siteId, Content $content, array $payload = []): array
     {
         $authorId = $content->authorId;
 
         $recipients = match ($event) {
             // The author submitted it: the people who need to know are the reviewers.
             'content.submitted' => $this->roles->usersWithCapability('workflow.review', $siteId),
+
+            // A comment waits for a moderator, so the moderators are the ones who need to know.
+            'comment.created' => $this->roles->usersWithCapability('comment.moderate', $siteId),
 
             // Everything else is news for the author.
             default => [$authorId],
@@ -252,11 +263,29 @@ final class NotificationService implements NotificationServiceInterface
             ));
         }
 
+        // Staff can comment too; telling them about their own comment is noise.
+        if ($event === 'comment.created') {
+            $commenter = isset($payload['user_id']) ? (int) $payload['user_id'] : 0;
+
+            if ($commenter > 0) {
+                $recipients = array_values(array_filter(
+                    $recipients,
+                    static fn (int $id): bool => $id !== $commenter
+                ));
+            }
+        }
+
         return array_values(array_unique($recipients));
     }
 
-    private function titleFor(string $event, Content $content): string
+    private function titleFor(string $event, Content $content, array $payload = []): string
     {
+        if ($event === 'comment.created') {
+            $name = trim((string) ($payload['author_name'] ?? ''));
+
+            return 'New comment awaiting moderation' . ($name !== '' ? ' from ' . $name : '');
+        }
+
         $label = match ($event) {
             'content.submitted' => 'Content submitted for review',
             'content.revision_requested' => 'Revision requested',
@@ -269,8 +298,14 @@ final class NotificationService implements NotificationServiceInterface
         return $label . ': ' . $content->title;
     }
 
-    private function bodyFor(string $event, Content $content): string
+    private function bodyFor(string $event, Content $content, array $payload = []): string
     {
+        if ($event === 'comment.created') {
+            $excerpt = trim((string) ($payload['excerpt'] ?? ''));
+
+            return 'On "' . $content->title . '"' . ($excerpt !== '' ? ': ' . $excerpt : '.');
+        }
+
         $action = match ($event) {
             'content.submitted' => 'has been submitted for review.',
             'content.revision_requested' => 'needs revision before it can be published.',
