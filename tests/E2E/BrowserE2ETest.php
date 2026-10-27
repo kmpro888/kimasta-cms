@@ -193,13 +193,14 @@ final class BrowserE2ETest extends AdminTestCase
             self::markTestSkipped('The application server did not start: ' . self::$serverError);
         }
 
-        // No `--virtual-time-budget`: with a budget Chrome dumps the DOM when the budget expires,
-        // and on a loaded runner the page had not loaded yet, so the dump was Chrome's own error
-        // page. `--dump-dom` already waits for the load event.
+        // `--virtual-time-budget` is required: without it this headless build dumps the DOM before
+        // the page loads. It must also be long enough for a loaded runner — five seconds was not,
+        // and the dump was Chrome's own error page rather than the site.
         // `--disable-dev-shm-usage` because containers often have a small /dev/shm.
         $command = escapeshellarg(self::$browser)
             . ' --headless=new --disable-gpu --no-sandbox --hide-scrollbars'
             . ' --disable-dev-shm-usage'
+            . ' --virtual-time-budget=20000'
             // Resolve the site's own host to the local server, so the application sees the host it
             // expects and tenant resolution runs for real rather than being bypassed.
             . ' --host-resolver-rules=' . escapeshellarg('MAP ' . self::SITE_HOST . ' 127.0.0.1')
