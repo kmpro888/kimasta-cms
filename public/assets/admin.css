@@ -995,3 +995,45 @@ body.is-error {
     align-items: center;
     flex-wrap: wrap;
 }
+
+/* ------------------------------------------------------------------ plugins */
+
+.plugin-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.plugin-item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.plugin-item__head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    font-size: 0.95rem;
+}
+
+.plugin-item__description {
+    margin: 0.6rem 0 0.3rem;
+    color: var(--ink-soft);
+    font-size: 0.93rem;
+}
+
+.plugin-item__meta {
+    margin: 0 0 0.9rem;
+    color: var(--muted);
+    font-size: 0.83rem;
+}
+
+.plugin-item__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}

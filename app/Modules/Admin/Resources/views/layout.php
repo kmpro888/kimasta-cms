@@ -41,6 +41,7 @@ if ($actor !== null && $actor->can('users.read')) {
 
 if ($actor !== null && $actor->can('settings.update')) {
     $navItems['/admin/redirects'] = 'Redirects';
+    $navItems['/admin/plugins'] = 'Plugins';
     $navItems['/admin/settings'] = 'Settings';
 }
 
