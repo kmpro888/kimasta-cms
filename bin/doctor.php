@@ -87,9 +87,13 @@ try {
     $siteRow = $db->selectOne('SELECT id FROM sites ORDER BY id ASC LIMIT 1');
     $siteId = $siteRow === null ? 0 : (int) $siteRow['id'];
 
-    $sitemap = $siteId > 0
-        ? is_file($storage . '/cache/system/sitemaps/sitemap-' . $siteId . '.xml')
-        : false;
+    // Ask the SEO module where its artifacts live rather than rebuilding the path here: the
+    // directory gained a per-database segment, and a hardcoded path would have reported "no
+    // sitemap" forever while one existed.
+    $sitemap = $siteId > 0 && is_file(
+        \CMS\Modules\Seo\SeoServiceProvider::sitemapDirectory($config)
+            . DIRECTORY_SEPARATOR . 'sitemap-' . $siteId . '.xml'
+    );
 
     $results['sitemap'] = Doctor::checkSitemap($sitemap);
 } catch (Throwable $exception) {
