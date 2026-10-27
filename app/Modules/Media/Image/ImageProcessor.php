@@ -215,12 +215,26 @@ final class ImageProcessor implements ImageProcessorInterface
             $image->autoOrient();
 
             if ($maxWidth !== null || $maxHeight !== null) {
-                $image->thumbnailImage(
-                    $maxWidth ?? 0,
-                    $maxHeight ?? 0,
-                    true,
-                    true
-                );
+                // Fit inside the box, preserve the aspect ratio, and never enlarge.
+                //
+                // `thumbnailImage($w, $h, true, true)` — the previous version — treats the box as a
+                // target to fill, so a 400x300 image became 200x200 instead of 200x150, and an 80x60
+                // image was upscaled to 640x640. Both were invisible on a machine with GD only and
+                // appeared the first time CI ran on a runner that also has Imagick.
+                $sourceWidth = $image->getImageWidth();
+                $sourceHeight = $image->getImageHeight();
+
+                $boxWidth = $maxWidth ?? $sourceWidth;
+                $boxHeight = $maxHeight ?? $sourceHeight;
+
+                $scale = min($boxWidth / $sourceWidth, $boxHeight / $sourceHeight, 1.0);
+
+                $targetWidth = max(1, (int) round($sourceWidth * $scale));
+                $targetHeight = max(1, (int) round($sourceHeight * $scale));
+
+                if ($targetWidth !== $sourceWidth || $targetHeight !== $sourceHeight) {
+                    $image->resizeImage($targetWidth, $targetHeight, \Imagick::FILTER_LANCZOS, 1);
+                }
             }
 
             $target = $format === 'original'
