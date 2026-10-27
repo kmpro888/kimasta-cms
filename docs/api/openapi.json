@@ -1,0 +1,3265 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Lightweight Portal CMS API",
+        "version": "1.0.0",
+        "description": "Generated from the router by `php bin/openapi.php`. Do not edit by hand: a contract test fails when this document and the routes disagree. It describes the core API; a route contributed by a plugin is not included, because whether it exists depends on whether that plugin is active."
+    },
+    "servers": [
+        {
+            "url": "/",
+            "description": "This site"
+        }
+    ],
+    "tags": [
+        {
+            "name": "health"
+        },
+        {
+            "name": "auth"
+        },
+        {
+            "name": "content"
+        },
+        {
+            "name": "posts"
+        },
+        {
+            "name": "pages"
+        },
+        {
+            "name": "taxonomies"
+        },
+        {
+            "name": "search"
+        },
+        {
+            "name": "comments"
+        },
+        {
+            "name": "media"
+        },
+        {
+            "name": "redirects"
+        },
+        {
+            "name": "settings"
+        },
+        {
+            "name": "themes"
+        },
+        {
+            "name": "me"
+        },
+        {
+            "name": "migration"
+        },
+        {
+            "name": "notifications"
+        },
+        {
+            "name": "ads"
+        },
+        {
+            "name": "plugins"
+        },
+        {
+            "name": "users"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "session": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "PHPSESSID",
+                "description": "The session created by POST /auth/login. This API has no bearer tokens: it authenticates with the same session cookie the admin uses."
+            }
+        },
+        "schemas": {
+            "SuccessEnvelope": {
+                "type": "object",
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "description": "The resource, or a list of resources."
+                    },
+                    "meta": {
+                        "type": "object",
+                        "description": "Always an object, never an array, so a client can read it without a shape check."
+                    }
+                }
+            },
+            "ErrorEnvelope": {
+                "type": "object",
+                "required": [
+                    "error"
+                ],
+                "properties": {
+                    "error": {
+                        "type": "object",
+                        "required": [
+                            "code",
+                            "message"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string",
+                                "description": "UPPER_SNAKE_CASE, stable enough to branch on.",
+                                "pattern": "^[A-Z][A-Z0-9_]*$"
+                            },
+                            "message": {
+                                "type": "string"
+                            },
+                            "details": {
+                                "type": "object",
+                                "description": "Present only when there is something to say, such as field errors."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "paths": {
+        "/api/v1/ads": {
+            "get": {
+                "operationId": "get_ads",
+                "summary": "GET /api/v1/ads (authentication varies: see x-auth)",
+                "tags": [
+                    "ads"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "post_ads",
+                "summary": "POST /api/v1/ads",
+                "tags": [
+                    "ads"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/ads/{id}": {
+            "patch": {
+                "operationId": "patch_ads_by_id",
+                "summary": "PATCH /api/v1/ads/{id}",
+                "tags": [
+                    "ads"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "delete_ads_by_id",
+                "summary": "DELETE /api/v1/ads/{id}",
+                "tags": [
+                    "ads"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/csrf": {
+            "get": {
+                "operationId": "get_auth_csrf",
+                "summary": "GET /api/v1/auth/csrf (no session required)",
+                "tags": [
+                    "auth"
+                ],
+                "x-auth": "public",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/forgot-password": {
+            "post": {
+                "operationId": "post_auth_forgot_password",
+                "summary": "POST /api/v1/auth/forgot-password (no session required)",
+                "tags": [
+                    "auth"
+                ],
+                "x-auth": "public",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "operationId": "post_auth_login",
+                "summary": "POST /api/v1/auth/login (no session required)",
+                "tags": [
+                    "auth"
+                ],
+                "x-auth": "public",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "operationId": "post_auth_logout",
+                "summary": "POST /api/v1/auth/logout",
+                "tags": [
+                    "auth"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/me": {
+            "get": {
+                "operationId": "get_auth_me",
+                "summary": "GET /api/v1/auth/me",
+                "tags": [
+                    "auth"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/reset-password": {
+            "post": {
+                "operationId": "post_auth_reset_password",
+                "summary": "POST /api/v1/auth/reset-password (no session required)",
+                "tags": [
+                    "auth"
+                ],
+                "x-auth": "public",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/comments": {
+            "get": {
+                "operationId": "get_comments",
+                "summary": "GET /api/v1/comments (authentication varies: see x-auth)",
+                "tags": [
+                    "comments"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/comments/{id}": {
+            "delete": {
+                "operationId": "delete_comments_by_id",
+                "summary": "DELETE /api/v1/comments/{id}",
+                "tags": [
+                    "comments"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/comments/{id}/approve": {
+            "post": {
+                "operationId": "post_comments_by_id_approve",
+                "summary": "POST /api/v1/comments/{id}/approve",
+                "tags": [
+                    "comments"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/comments/{id}/spam": {
+            "post": {
+                "operationId": "post_comments_by_id_spam",
+                "summary": "POST /api/v1/comments/{id}/spam",
+                "tags": [
+                    "comments"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/comments/{id}/trash": {
+            "post": {
+                "operationId": "post_comments_by_id_trash",
+                "summary": "POST /api/v1/comments/{id}/trash",
+                "tags": [
+                    "comments"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/content": {
+            "get": {
+                "operationId": "get_content",
+                "summary": "GET /api/v1/content (authentication varies: see x-auth)",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "post_content",
+                "summary": "POST /api/v1/content",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/content/{id}": {
+            "get": {
+                "operationId": "get_content_by_id",
+                "summary": "GET /api/v1/content/{id} (authentication varies: see x-auth)",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "patch_content_by_id",
+                "summary": "PATCH /api/v1/content/{id}",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "delete_content_by_id",
+                "summary": "DELETE /api/v1/content/{id}",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/content/{id}/autosave": {
+            "post": {
+                "operationId": "post_content_by_id_autosave",
+                "summary": "POST /api/v1/content/{id}/autosave",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/content/{id}/comments": {
+            "get": {
+                "operationId": "get_content_by_id_comments",
+                "summary": "GET /api/v1/content/{id}/comments (authentication varies: see x-auth)",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "post_content_by_id_comments",
+                "summary": "POST /api/v1/content/{id}/comments",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/content/{id}/history": {
+            "get": {
+                "operationId": "get_content_by_id_history",
+                "summary": "GET /api/v1/content/{id}/history (authentication varies: see x-auth)",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/content/{id}/revisions": {
+            "get": {
+                "operationId": "get_content_by_id_revisions",
+                "summary": "GET /api/v1/content/{id}/revisions (authentication varies: see x-auth)",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "post_content_by_id_revisions",
+                "summary": "POST /api/v1/content/{id}/revisions",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/content/{id}/seo": {
+            "get": {
+                "operationId": "get_content_by_id_seo",
+                "summary": "GET /api/v1/content/{id}/seo (authentication varies: see x-auth)",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "put": {
+                "operationId": "put_content_by_id_seo",
+                "summary": "PUT /api/v1/content/{id}/seo",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/content/{id}/terms": {
+            "get": {
+                "operationId": "get_content_by_id_terms",
+                "summary": "GET /api/v1/content/{id}/terms (authentication varies: see x-auth)",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "put": {
+                "operationId": "put_content_by_id_terms",
+                "summary": "PUT /api/v1/content/{id}/terms",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/content/{id}/transitions": {
+            "post": {
+                "operationId": "post_content_by_id_transitions",
+                "summary": "POST /api/v1/content/{id}/transitions",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "get": {
+                "operationId": "get_content_by_id_transitions",
+                "summary": "GET /api/v1/content/{id}/transitions (authentication varies: see x-auth)",
+                "tags": [
+                    "content"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/health": {
+            "get": {
+                "operationId": "api.health",
+                "summary": "GET /api/v1/health (no session required)",
+                "tags": [
+                    "health"
+                ],
+                "x-auth": "public",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/content": {
+            "get": {
+                "operationId": "get_me_content",
+                "summary": "GET /api/v1/me/content (authentication varies: see x-auth)",
+                "tags": [
+                    "me"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "post_me_content",
+                "summary": "POST /api/v1/me/content",
+                "tags": [
+                    "me"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/content/published": {
+            "get": {
+                "operationId": "get_me_content_published",
+                "summary": "GET /api/v1/me/content/published (authentication varies: see x-auth)",
+                "tags": [
+                    "me"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/content/{id}": {
+            "patch": {
+                "operationId": "patch_me_content_by_id",
+                "summary": "PATCH /api/v1/me/content/{id}",
+                "tags": [
+                    "me"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/me/content/{id}/history": {
+            "get": {
+                "operationId": "get_me_content_by_id_history",
+                "summary": "GET /api/v1/me/content/{id}/history (authentication varies: see x-auth)",
+                "tags": [
+                    "me"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/me/content/{id}/submit": {
+            "post": {
+                "operationId": "post_me_content_by_id_submit",
+                "summary": "POST /api/v1/me/content/{id}/submit",
+                "tags": [
+                    "me"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/me/notifications": {
+            "get": {
+                "operationId": "get_me_notifications",
+                "summary": "GET /api/v1/me/notifications (authentication varies: see x-auth)",
+                "tags": [
+                    "me"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/notifications/read-all": {
+            "post": {
+                "operationId": "post_me_notifications_read_all",
+                "summary": "POST /api/v1/me/notifications/read-all",
+                "tags": [
+                    "me"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/notifications/{id}/read": {
+            "post": {
+                "operationId": "post_me_notifications_by_id_read",
+                "summary": "POST /api/v1/me/notifications/{id}/read",
+                "tags": [
+                    "me"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/media": {
+            "get": {
+                "operationId": "get_media",
+                "summary": "GET /api/v1/media (authentication varies: see x-auth)",
+                "tags": [
+                    "media"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "post_media",
+                "summary": "POST /api/v1/media",
+                "tags": [
+                    "media"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/media/{id}": {
+            "get": {
+                "operationId": "get_media_by_id",
+                "summary": "GET /api/v1/media/{id} (authentication varies: see x-auth)",
+                "tags": [
+                    "media"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "patch_media_by_id",
+                "summary": "PATCH /api/v1/media/{id}",
+                "tags": [
+                    "media"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "delete_media_by_id",
+                "summary": "DELETE /api/v1/media/{id}",
+                "tags": [
+                    "media"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/migration/analyze": {
+            "get": {
+                "operationId": "get_migration_analyze",
+                "summary": "GET /api/v1/migration/analyze (authentication varies: see x-auth)",
+                "tags": [
+                    "migration"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/migration/batch": {
+            "post": {
+                "operationId": "post_migration_batch",
+                "summary": "POST /api/v1/migration/batch",
+                "tags": [
+                    "migration"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/migration/logs": {
+            "get": {
+                "operationId": "get_migration_logs",
+                "summary": "GET /api/v1/migration/logs (authentication varies: see x-auth)",
+                "tags": [
+                    "migration"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/migration/plan": {
+            "get": {
+                "operationId": "get_migration_plan",
+                "summary": "GET /api/v1/migration/plan (authentication varies: see x-auth)",
+                "tags": [
+                    "migration"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/migration/report": {
+            "get": {
+                "operationId": "get_migration_report",
+                "summary": "GET /api/v1/migration/report (authentication varies: see x-auth)",
+                "tags": [
+                    "migration"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/preferences": {
+            "get": {
+                "operationId": "get_notifications_preferences",
+                "summary": "GET /api/v1/notifications/preferences (authentication varies: see x-auth)",
+                "tags": [
+                    "notifications"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "operationId": "put_notifications_preferences",
+                "summary": "PUT /api/v1/notifications/preferences",
+                "tags": [
+                    "notifications"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pages": {
+            "get": {
+                "operationId": "get_pages",
+                "summary": "GET /api/v1/pages (authentication varies: see x-auth)",
+                "tags": [
+                    "pages"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/plugins": {
+            "get": {
+                "operationId": "get_plugins",
+                "summary": "GET /api/v1/plugins (authentication varies: see x-auth)",
+                "tags": [
+                    "plugins"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/plugins/{name}": {
+            "delete": {
+                "operationId": "delete_plugins_by_name",
+                "summary": "DELETE /api/v1/plugins/{name}",
+                "tags": [
+                    "plugins"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/plugins/{name}/activate": {
+            "post": {
+                "operationId": "post_plugins_by_name_activate",
+                "summary": "POST /api/v1/plugins/{name}/activate",
+                "tags": [
+                    "plugins"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/plugins/{name}/deactivate": {
+            "post": {
+                "operationId": "post_plugins_by_name_deactivate",
+                "summary": "POST /api/v1/plugins/{name}/deactivate",
+                "tags": [
+                    "plugins"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/plugins/{name}/install": {
+            "post": {
+                "operationId": "post_plugins_by_name_install",
+                "summary": "POST /api/v1/plugins/{name}/install",
+                "tags": [
+                    "plugins"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/posts": {
+            "get": {
+                "operationId": "get_posts",
+                "summary": "GET /api/v1/posts (authentication varies: see x-auth)",
+                "tags": [
+                    "posts"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/redirects": {
+            "get": {
+                "operationId": "get_redirects",
+                "summary": "GET /api/v1/redirects (authentication varies: see x-auth)",
+                "tags": [
+                    "redirects"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "post_redirects",
+                "summary": "POST /api/v1/redirects",
+                "tags": [
+                    "redirects"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "delete_redirects",
+                "summary": "DELETE /api/v1/redirects",
+                "tags": [
+                    "redirects"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/search": {
+            "get": {
+                "operationId": "get_search",
+                "summary": "GET /api/v1/search (authentication varies: see x-auth)",
+                "tags": [
+                    "search"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/settings": {
+            "get": {
+                "operationId": "get_settings",
+                "summary": "GET /api/v1/settings (authentication varies: see x-auth)",
+                "tags": [
+                    "settings"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "operationId": "put_settings",
+                "summary": "PUT /api/v1/settings",
+                "tags": [
+                    "settings"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/taxonomies/terms/{id}": {
+            "delete": {
+                "operationId": "delete_taxonomies_terms_by_id",
+                "summary": "DELETE /api/v1/taxonomies/terms/{id}",
+                "tags": [
+                    "taxonomies"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/taxonomies/{taxonomy}/terms": {
+            "get": {
+                "operationId": "get_taxonomies_by_taxonomy_terms",
+                "summary": "GET /api/v1/taxonomies/{taxonomy}/terms (authentication varies: see x-auth)",
+                "tags": [
+                    "taxonomies"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "post_taxonomies_by_taxonomy_terms",
+                "summary": "POST /api/v1/taxonomies/{taxonomy}/terms",
+                "tags": [
+                    "taxonomies"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/themes": {
+            "get": {
+                "operationId": "get_themes",
+                "summary": "GET /api/v1/themes (authentication varies: see x-auth)",
+                "tags": [
+                    "themes"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/themes/active": {
+            "get": {
+                "operationId": "get_themes_active",
+                "summary": "GET /api/v1/themes/active (authentication varies: see x-auth)",
+                "tags": [
+                    "themes"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/themes/{name}/activate": {
+            "post": {
+                "operationId": "post_themes_by_name_activate",
+                "summary": "POST /api/v1/themes/{name}/activate",
+                "tags": [
+                    "themes"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users": {
+            "get": {
+                "operationId": "get_users",
+                "summary": "GET /api/v1/users (authentication varies: see x-auth)",
+                "tags": [
+                    "users"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "post_users",
+                "summary": "POST /api/v1/users",
+                "tags": [
+                    "users"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}": {
+            "get": {
+                "operationId": "get_users_by_id",
+                "summary": "GET /api/v1/users/{id} (authentication varies: see x-auth)",
+                "tags": [
+                    "users"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "patch_users_by_id",
+                "summary": "PATCH /api/v1/users/{id}",
+                "tags": [
+                    "users"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "delete_users_by_id",
+                "summary": "DELETE /api/v1/users/{id}",
+                "tags": [
+                    "users"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{id}/roles": {
+            "get": {
+                "operationId": "get_users_by_id_roles",
+                "summary": "GET /api/v1/users/{id}/roles (authentication varies: see x-auth)",
+                "tags": [
+                    "users"
+                ],
+                "x-auth": "varies",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            },
+            "put": {
+                "operationId": "put_users_by_id_roles",
+                "summary": "PUT /api/v1/users/{id}/roles",
+                "tags": [
+                    "users"
+                ],
+                "x-auth": "session",
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The frozen success envelope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "The frozen error envelope: validation, authentication, not-found and conflict are all described by it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Must match /\\d+/."
+                    }
+                ]
+            }
+        }
+    }
+}
