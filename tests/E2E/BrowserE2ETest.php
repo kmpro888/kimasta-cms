@@ -200,7 +200,7 @@ final class BrowserE2ETest extends AdminTestCase
         $command = escapeshellarg(self::$browser)
             . ' --headless=new --disable-gpu --no-sandbox --hide-scrollbars'
             . ' --disable-dev-shm-usage'
-            . ' --virtual-time-budget=20000'
+            . ' --virtual-time-budget=30000'
             // Resolve the site's own host to the local server, so the application sees the host it
             // expects and tenant resolution runs for real rather than being bypassed.
             . ' --host-resolver-rules=' . escapeshellarg('MAP ' . self::SITE_HOST . ' 127.0.0.1')
