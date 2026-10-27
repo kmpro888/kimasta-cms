@@ -9,6 +9,7 @@ use CMS\Core\Container\Container;
 use CMS\Core\Filesystem\LockInterface;
 use CMS\Core\Routing\Router;
 use CMS\Modules\Advertising\Contracts\AdvertisingServiceInterface;
+use CMS\Modules\Comment\Contracts\CommentServiceInterface;
 use CMS\Modules\Analytics\Contracts\AnalyticsServiceInterface;
 use CMS\Modules\Cache\Contracts\PageCacheInterface;
 use CMS\Modules\Content\Contracts\ContentQueryServiceInterface;
@@ -77,6 +78,7 @@ final class ThemeServiceProvider implements ServiceProviderInterface
                 $c->get(MediaServiceInterface::class),
                 $c->has(AdvertisingServiceInterface::class) ? $c->get(AdvertisingServiceInterface::class) : null,
                 $c->has(AnalyticsServiceInterface::class) ? $c->get(AnalyticsServiceInterface::class) : null,
+                $c->has(CommentServiceInterface::class) ? $c->get(CommentServiceInterface::class) : null,
             );
         });
 

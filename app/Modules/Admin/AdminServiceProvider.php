@@ -10,6 +10,7 @@ use CMS\Core\Routing\Router;
 use CMS\Core\Security\RateLimiter;
 use CMS\Modules\Admin\Http\Controller\AuthController;
 use CMS\Modules\Admin\Http\Controller\ContentController;
+use CMS\Modules\Admin\Http\Controller\CommentController;
 use CMS\Modules\Admin\Http\Controller\DashboardController;
 use CMS\Modules\Admin\Http\Controller\MediaController;
 use CMS\Modules\Admin\Http\Middleware\AdminAuthMiddleware;
@@ -17,6 +18,7 @@ use CMS\Modules\Admin\Http\Middleware\AdminContextMiddleware;
 use CMS\Modules\Admin\Http\Middleware\AdminErrorMiddleware;
 use CMS\Modules\Admin\Support\AdminView;
 use CMS\Modules\Admin\Support\BlockFormCompiler;
+use CMS\Modules\Comment\Contracts\CommentServiceInterface;
 use CMS\Modules\Content\Contracts\ContentQueryServiceInterface;
 use CMS\Modules\Content\Contracts\ContentServiceInterface;
 use CMS\Modules\Contribution\Contracts\ContributorServiceInterface;
@@ -122,6 +124,18 @@ final class AdminServiceProvider implements ServiceProviderInterface
         );
 
         $container->singleton(
+            CommentController::class,
+            static fn (Container $c): CommentController => new CommentController(
+                $c->get(AdminView::class),
+                $c->get(SessionInterface::class),
+                $c->get(CsrfTokenManagerInterface::class),
+                $c->get(ActorProviderInterface::class),
+                $c->get(CommentServiceInterface::class),
+                $c->get(ContentServiceInterface::class),
+            )
+        );
+
+        $container->singleton(
             MediaController::class,
             static fn (Container $c): MediaController => new MediaController(
                 $c->get(AdminView::class),
@@ -154,6 +168,12 @@ final class AdminServiceProvider implements ServiceProviderInterface
         $this->route($container, $router, 'POST', '/admin/password', AuthController::class, 'changePassword', $chain);
 
         $this->route($container, $router, 'GET', '/admin', DashboardController::class, 'index', $chain);
+
+        $this->route($container, $router, 'GET', '/admin/comments', CommentController::class, 'index', $chain);
+        $this->route($container, $router, 'POST', '/admin/comments/{id:\d+}/approve', CommentController::class, 'approve', $chain);
+        $this->route($container, $router, 'POST', '/admin/comments/{id:\d+}/spam', CommentController::class, 'spam', $chain);
+        $this->route($container, $router, 'POST', '/admin/comments/{id:\d+}/trash', CommentController::class, 'trash', $chain);
+        $this->route($container, $router, 'POST', '/admin/comments/{id:\d+}/delete', CommentController::class, 'destroy', $chain);
 
         $this->route($container, $router, 'GET', '/admin/media', MediaController::class, 'index', $chain);
         $this->route($container, $router, 'POST', '/admin/media', MediaController::class, 'store', $chain);

@@ -41,7 +41,30 @@ final class PageViewModelFactory
         private readonly MediaServiceInterface $media,
         private readonly ?\CMS\Modules\Advertising\Contracts\AdvertisingServiceInterface $advertising = null,
         private readonly ?\CMS\Modules\Analytics\Contracts\AnalyticsServiceInterface $analytics = null,
+        private readonly ?\CMS\Modules\Comment\Contracts\CommentServiceInterface $comments = null,
     ) {
+    }
+
+    /**
+     * Approved comments for one article.
+     *
+     * Optional dependency, like analytics and advertising: a site with the comment module removed
+     * must render its articles, not fail them. An approved comment existed in the database for
+     * weeks while the article page showed nothing, because nothing asked for the thread.
+     *
+     * @return list<\CMS\Modules\Comment\Entity\Comment>
+     */
+    private function commentThread(int $siteId, int $contentId): array
+    {
+        if ($this->comments === null) {
+            return [];
+        }
+
+        try {
+            return $this->comments->thread($siteId, $contentId);
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     /**
@@ -147,6 +170,11 @@ final class PageViewModelFactory
             // `ads.before_article` and never queries for an ad, which is what keeps
             // "theme must not query the database" true.
             'ads' => $this->adsFor($siteId, $content->type, array_column($terms, 'id')),
+
+            // Approved comments, flat with their depth so the template can indent without
+            // walking a tree. The thread service already excludes pending and spam.
+            'comments' => $this->commentThread($siteId, (int) $content->id),
+            'comments_open' => $content->commentStatus === 'open',
         ]);
     }
 

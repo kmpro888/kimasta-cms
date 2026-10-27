@@ -71,6 +71,12 @@ echo $renderer->partial($themeName, 'head', $view);
       </ul>
     <?php endif; ?>
   </article>
+
+  <?php
+  // Comments live in their own partial, so the section can be reused and so a site without the
+  // module renders nothing rather than an empty heading.
+  echo $renderer->partial($themeName, 'comments', $view);
+  ?>
 </main>
 <?php
 echo $renderer->partial($themeName, 'footer', $view);

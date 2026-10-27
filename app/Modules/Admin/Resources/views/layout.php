@@ -20,12 +20,19 @@ $flash = $view->get('flash');
 $path = (string) $view->get('path');
 
 $canReview = $actor !== null && $actor->can('workflow.review');
+$canModerate = $actor !== null && $actor->can('comment.moderate');
 
 $navItems = [
     '/admin' => 'Dashboard',
     '/admin/content' => 'Content',
     '/admin/media' => 'Media',
 ];
+
+// Only shown to someone who can act on it: a menu entry that leads to a 403 page is worse than
+// no menu entry.
+if ($canModerate) {
+    $navItems['/admin/comments'] = 'Comments';
+}
 
 $isActive = static function (string $item) use ($path): bool {
     if ($item === '/admin') {
