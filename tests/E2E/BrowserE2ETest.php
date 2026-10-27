@@ -94,7 +94,7 @@ final class BrowserE2ETest extends AdminTestCase
         );
 
         // Wait for the port to answer before handing tests a browser.
-        for ($attempt = 0; $attempt < 50; $attempt++) {
+        for ($attempt = 0; $attempt < 150; $attempt++) {
             $connection = @fsockopen('127.0.0.1', self::$serverPort, $errno, $errstr, 0.2);
 
             if (is_resource($connection)) {
@@ -140,6 +140,22 @@ final class BrowserE2ETest extends AdminTestCase
 
     /** The host the test site is resolvable at; the application maps sites by host, not by address. */
     private const SITE_HOST = 'example.com';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // One published article, so every path under test has data: a search with no results is a
+        // themed 404, and asserting page structure against it tests the wrong page.
+        $this->app->container()->get(\CMS\Modules\Content\Contracts\ContentServiceInterface::class)->create($this->siteId, [
+            'type' => 'post',
+            'title' => 'Hello E2E',
+            'slug' => 'hello-e2e',
+            'author_id' => $this->makeUser('e2e-author', 'contributor'),
+            'status' => 'published',
+            'content_json' => [['type' => 'paragraph', 'version' => 1, 'data' => ['text' => 'Body.']]],
+        ]);
+    }
 
     private function url(string $path): string
     {
