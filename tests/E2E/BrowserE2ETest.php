@@ -206,6 +206,19 @@ final class BrowserE2ETest extends AdminTestCase
             . ' --host-resolver-rules=' . escapeshellarg('MAP ' . self::SITE_HOST . ' 127.0.0.1')
             . ' --dump-dom ' . escapeshellarg($this->url($path));
 
+        // Warm the page with a plain HTTP request first, carrying the tenant's host.
+        //
+        // `/blog` was the one path that intermittently failed in CI: the browser's request for a
+        // cache-miss listing did not complete inside the virtual time budget, twice, while `/` and
+        // `/search` were fine and the server stayed healthy. What this suite tests is the rendered
+        // structure, not the first-hit latency, so the page is rendered warm — which is also the
+        // state a returning visitor sees.
+        $context = stream_context_create([
+            'http' => ['header' => 'Host: ' . self::SITE_HOST . "\r\n", 'timeout' => 20],
+        ]);
+
+        @file_get_contents($this->urlByAddress($path), false, $context);
+
         $dom = '';
 
         // Two attempts. Chrome renders its own error page when the request does not complete inside
