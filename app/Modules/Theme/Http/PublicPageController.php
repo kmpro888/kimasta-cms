@@ -256,7 +256,12 @@ final class PublicPageController implements RequestHandlerInterface
 
             $term = ['name' => $found->name, 'slug' => $found->slug, 'description' => $found->description];
             $title = $found->name;
-            $criteria['ids'] = $this->taxonomy->contentIdsForTerm((int) $found->id, $siteId);
+            // One criterion instead of every id: the repository pages this in SQL, so a
+            // category holding 20,000 articles no longer builds a 20,000-placeholder IN list.
+            $criteria['term_id'] = (int) $found->id;
+            // Same type filter the blog archive uses. Without it the archive index cannot order
+            // the page and MySQL filesorts ~25,000 rows to return ten.
+            $criteria['type'] = 'post';
             $context = new TemplateContext(TemplateContext::TAXONOMY);
 
             // Author archive: /author/{id}

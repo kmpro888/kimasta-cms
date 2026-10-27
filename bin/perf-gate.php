@@ -437,32 +437,12 @@ function measure($app, $container, Connection $db, int $siteId, string $host): i
         (string) $hit->header('X-Cache')
     ));
 
-    fwrite(STDOUT, "\nEXPLAIN on the busiest statements\n");
-    fwrite(STDOUT, str_repeat('-', 66) . "\n");
-
-    foreach ($captured as $label => $queries) {
-        foreach (array_slice($queries, 0, 6) as $index => $query) {
-            $sql = is_array($query) ? (string) ($query['sql'] ?? '') : (string) $query;
-
-            if ($sql === '' || str_starts_with($sql, 'EXPLAIN')) {
-                continue;
-            }
-
-            // The profiler records the statement, not its bindings, so a named placeholder would\n            // reach MySQL unchanged. Equality on an indexed column plans the same for any constant.\n            $explainable = preg_replace('/:[A-Za-z_][A-Za-z0-9_]*/', '1', $sql);\n            $plan = $db->select('EXPLAIN ' . $explainable);
-
-            $notes = [];
-
-            foreach ($plan as $step) {
-                $notes[] = ($step['table'] ?? '?') . ':' . ($step['type'] ?? '?')
-                    . '/key=' . ($step['key'] ?? 'NULL')
-                    . '/rows=' . ($step['rows'] ?? '?');
-            }
-
-            fwrite(STDOUT, sprintf("  %-18s #%d %s\n", $label, $index + 1, implode(' | ', $notes)));
-            fwrite(STDOUT, '    ' . preg_replace('/\s+/', ' ', substr($sql, 0, 140)) . "\n");
-        }
-    }
-
+    // Query-plan capture is deliberately not automated here.
+    //
+    // The profiler records each statement but not its bindings, so a parameterised statement
+    // cannot be handed to EXPLAIN as written. The plans quoted in
+    // docs/reports/Performance-Gate.md were taken by hand against the scratch database with
+    // literal values.
     return 0;
 }
 

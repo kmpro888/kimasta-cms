@@ -249,6 +249,26 @@ final class PdoContentRepository implements ContentRepositoryInterface
             $bindings['now'] = $this->now();
         }
 
+        // Restrict to one taxonomy term.
+        //
+        // A subquery, not an id list. The previous design resolved *every* id for the term in the
+        // Taxonomy module and passed them here, so a category holding 20,000 articles built an
+        // `IN (…20,000 placeholders…)` and a page took 1.6 seconds at that volume. The subquery
+        // keeps the page a page: MySQL uses idx_content_terms_term for the semi-join and
+        // idx_contents_archive for the ordering.
+        //
+        // This reads `content_terms`, which the Taxonomy module owns. That is a deliberate,
+        // narrow exception: it is a pure association table (two ids and a sort order, no
+        // taxonomy-owned column), the join is read-only, and the alternative is the unbounded
+        // intermediate result this used to be. The parameter names are prefixed because both
+        // tables have a `site_id`.
+        if (isset($criteria['term_id']) && (int) $criteria['term_id'] > 0) {
+            $clauses[] = 'id IN (SELECT ct.content_id FROM content_terms ct'
+                . ' WHERE ct.site_id = :ct_site_id AND ct.term_id = :ct_term_id)';
+            $bindings['ct_site_id'] = $siteId;
+            $bindings['ct_term_id'] = (int) $criteria['term_id'];
+        }
+
         // Restrict to an explicit id set (a taxonomy archive resolves its content
         // ids first, then asks Content for those rows). Placeholders come from a
         // validated integer list, never caller strings.

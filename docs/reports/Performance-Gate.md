@@ -49,39 +49,58 @@ Two things this settles:
 
 ---
 
+## Correction: the first diagnosis was wrong
+
+This report first claimed that the blog archive could not use
+`idx_contents_archive (site_id, type, status, published_at)` because it did not filter on `type`,
+and quoted a plan that read 24,633 rows with a filesort.
+
+That plan came from a hand-written `EXPLAIN` that **omitted** `type`. The real `/blog` query does
+filter on it, and the plan is:
+
+```text
+key:   idx_contents_archive
+Extra: Using index condition; Backward index scan
+```
+
+No filesort, no 24,633-row scan. The claim was wrong, and the number it explained (300 ms) was
+always just the cost of a cold page: eight queries, PHP boot, and rendering.
+
+The mistake was measuring a query I wrote rather than the query the code runs. The lesson is in the
+tool now: plans must come from the statement the profiler captured, not from one written by hand to
+match it.
+
+What the correction leaves is a **smaller, real** finding: the **category and author archives** do
+not pass a type filter, so they fall back to the slug key and filesort. Both are fixed below.
+
+---
+
 ## Two defects the gate found
 
-### 1. The archive listing cannot use its own index
+### 1. Archive queries that omitted the content type
+
+The blog archive passed `type`; the category and author archives did not:
 
 ```sql
+-- author archive, as it was
 EXPLAIN SELECT id, title FROM contents
-WHERE site_id = 1 AND status = 'published'
-ORDER BY published_at DESC LIMIT 20;
+WHERE site_id = 1 AND author_id = 1 AND status = 'published'
+ORDER BY published_at DESC LIMIT 10;
 ```
 
 ```text
-type:  ref
-key:   uq_contents_slug        -- the unique (site_id, type, slug) key
+key:   uq_contents_slug
 rows:  24633
 Extra: Using where; Using filesort
 ```
 
-The schema has a purpose-built index for exactly this:
+The category archive inherited the same shape through its id list. Fixing the id list (defect 2) and
+adding the type filter both brought the plan to:
 
-```sql
-KEY idx_contents_archive (site_id, type, status, published_at)
+```text
+key:   idx_contents_archive
+Extra: Using index condition; Backward index scan
 ```
-
-It is unusable because the listing query does not filter on `type`. MySQL falls back to the slug
-key to narrow by `site_id`, reads roughly half the table, discards rows in `WHERE`, and sorts the
-result — a filesort over 24,633 rows to return 20.
-
-That is why a cached-miss archive takes 300 ms while a single article takes 14 ms.
-
-**The fix is small and needs a decision:** either the listing passes the content type it already
-knows it wants (so the index covers `status` and orders by `published_at`), or the index gains a
-variant without `type`. The first is preferable and touches one query builder; the second costs an
-extra index to maintain.
 
 ### 2. A category archive resolves 20,000 ids and then paginates in PHP
 
@@ -101,22 +120,57 @@ page is then cut to twenty with a `WHERE id IN (…20,000 values…)`.
 
 That is the 1,568 ms. Not a missing index, not a bad plan: an unbounded intermediate result.
 
-**The fix is a query change, not an index:** paginate in SQL — join `content_terms` to `contents`,
-order by `published_at`, `LIMIT`/`OFFSET` — so the database returns twenty rows instead of twenty
-thousand. This was recorded earlier as a known scaling gap ("taxonomy archive resolves all ids then
-paginates"); the gate has now priced it.
+**The fix is a query change, not an index:** hand the repository a `term_id` and let it page in SQL
+with a semi-join, so the database returns ten rows instead of twenty thousand. This was recorded
+earlier as a known scaling gap ("taxonomy archive resolves all ids then paginates"); the gate priced
+it, and it is now fixed.
+
+### The fix, and what it cost
+
+```php
+// PdoContentRepository::buildWhere()
+if (isset($criteria['term_id']) && (int) $criteria['term_id'] > 0) {
+    $clauses[] = 'id IN (SELECT ct.content_id FROM content_terms ct'
+        . ' WHERE ct.site_id = :ct_site_id AND ct.term_id = :ct_term_id)';
+}
+```
+
+`PublicPageController` now passes `term_id` (and the `type` filter the blog archive already used)
+instead of resolving every id through the Taxonomy module.
+
+| | Before | After |
+|---|---|---|
+| category archive | 1,568 / 1,747 / 2,430 ms | 542 / 579 / 556 ms |
+| queries | 9 | 8 |
+| plan | filesort over 24,633 rows | `idx_contents_archive`, backward index scan |
+
+Three runs each, same machine. Roughly **3.4× faster**, and the archive now costs about what the
+blog archive costs (324 ms) rather than six times it.
+
+Regression guard: `TermArchiveTest` asserts that a term archive stays within twelve queries and that
+**no single query carries fifty or more bindings** — the shape that produced the 20,000-placeholder
+statement cannot come back silently.
+
+One boundary note: the subquery reads `content_terms`, which the Taxonomy module owns. That is a
+deliberate, narrow exception — it is a pure association table (two ids and a sort order, no
+taxonomy-owned column), the join is read-only, and the alternative is the unbounded intermediate
+result this replaced. It is commented as an exception where it lives.
 
 ---
 
 ## What the gate does not answer
 
-1. **Both defects are unfixed.** The gate measures; it does not repair. Each needs its own change
-   and its own tests.
+1. **The category archive is fixed**; the author archive keeps its shape (it now uses the archive
+   index for ordering, but a site whose posts are all by one author is a seed artefact, not a
+   workload — no further change was made on that evidence).
 2. **One machine, one run.** These are single-request wall times on a Windows development box with
-   WAMP. The query counts and plans are the durable part; the milliseconds are indicative.
-3. **`EXPLAIN` is manual.** The script's own EXPLAIN step records the statement but not its
-   bindings, so it cannot plan a parameterised query as written; the plans above were run directly
-   against the scratch database with literal values. Automated plan capture is a known gap.
+   WAMP. The query counts and plans are the durable part; the milliseconds are indicative, and the
+   spread across three runs is about ±40 ms.
+3. **`EXPLAIN` is manual.** The profiler records each statement but not its bindings, so a
+   parameterised query cannot be planned as written. The plans quoted here were taken by hand
+   against the scratch database with literal values. Automated plan capture is a known gap, and the
+   first version of this report got its diagnosis wrong precisely because it planned a hand-written
+   query instead of the one the code runs.
 4. **No concurrency.** Everything here is one request at a time. Nothing measures contention, the
    stampede lock, or what fifty simultaneous readers do.
 5. **No write paths.** Publishing, editing and commenting are not measured at these volumes.
@@ -154,4 +208,4 @@ No application code changed.
 
 ## Ready to merge
 
-yes — as a tool and a report. The two defects it found are open work.
+yes — as a tool, a report, and the fix it argued for.
