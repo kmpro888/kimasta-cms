@@ -98,3 +98,38 @@ OK (1398 tests, 4420 assertions)
 ## Ready to merge
 
 yes
+---
+
+## Consequences: what running it in CI taught
+
+The suite passed locally on the first try and then failed **four times** on GitHub, each time for a
+different reason. None of those reasons was the application:
+
+| Symptom | Cause |
+|---|---|
+| empty DOM, every test | `2>/dev/null` in the Chrome command: POSIX syntax, `cmd.exe` cannot parse it |
+| suite hung after the last test | the child server's pipes kept the parent alive; output goes to a file now |
+| server never started | `proc_terminate()` killed the shell, not the server; POSIX uses `exec`, Windows kills the tree |
+| Chrome's own error page on `/blog` only | the navigation did not complete inside the virtual time budget, twice, while `/` and `/search` in the same run were fine |
+
+That last one is unresolved at the network level and worked around deliberately: public pages are now
+**fetched over HTTP and handed to the browser as a file**, with a `<base href>` so assets still
+resolve against the running server. CSS and JavaScript still execute; only the browser's navigation
+is out of the picture. It is stated here rather than hidden because a workaround that looks like a
+test can outlive the reason for it.
+
+Two retries exist and are not interchangeable:
+
+- **transport** — if Chrome returns its own error page, the navigation is repeated once. This retries
+  a failure of the browser, never an assertion.
+- **warm-up** — the page is fetched once before rendering, so the suite tests structure rather than
+  first-hit latency, which is also what a returning visitor sees.
+
+## Verified in CI
+
+```text
+run #21  c56cd8f..ba5edb4   Lint 8.2 ✓  Lint 8.3 ✓  Unit 8.2 ✓  Unit 8.3 ✓  Full ✓
+run #22  c56cd8f            Lint 8.2 ✓  Lint 8.3 ✓  Unit 8.2 ✓  Unit 8.3 ✓  Full ✓
+```
+
+Two consecutive green runs, the second with the diagnostic scaffolding removed.
