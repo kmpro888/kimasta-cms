@@ -399,27 +399,28 @@ final class WordPressMigrationTest extends AppTestCase
     }
 
     #[Test]
-    public function anApprovedCommentIsImportedAndAGuestIsNot(): void
+    public function approvedCommentsAreImportedAndGuestsBecomeAnonymous(): void
     {
         $this->migration->runAll($this->siteId, 50);
-
-        $row = $this->db->selectOne('SELECT COUNT(*) AS total FROM comments');
-        // The registered commenter has an account; the guest does not, and this platform
-        // requires one.
-        self::assertSame(1, (int) $row['total']);
 
         $comments = $this->app->container()->get(\CMS\Modules\Comment\Contracts\CommentServiceInterface::class);
         $post = $this->app->container()->get(ContentServiceInterface::class)
             ->getBySlug('hello-world', 'post', $this->siteId);
 
         $thread = $comments->thread($this->siteId, (int) $post->id);
-        self::assertCount(1, $thread);
-        self::assertSame('A real comment.', $thread[0]->body);
 
-        // The guest comment is logged, not dropped silently.
-        $logs = $this->migration->logs($this->siteId, 'warning', 200);
-        $reasons = array_column($logs, 'reason');
-        self::assertNotEmpty(array_filter($reasons, static fn (string $r): bool => str_contains($r, 'Guest commenter')));
+        // The registered commenter keeps their account; the guest has no account, and since this
+        // platform accepts anonymous comments the comment is migrated as one instead of being
+        // dropped. Its author name is the only identity WordPress stored.
+        self::assertCount(2, $thread);
+
+        $bodies = array_map(static fn ($c): string => $c->body, $thread);
+        self::assertContains('A real comment.', $bodies);
+
+        $guests = array_values(array_filter($thread, static fn ($c): bool => (int) $c->userId === 0));
+
+        self::assertCount(1, $guests, 'The guest comment must be imported with user_id 0.');
+        self::assertNotSame('', trim((string) $guests[0]->authorName), 'and must keep its author name.');
     }
 
     #[Test]

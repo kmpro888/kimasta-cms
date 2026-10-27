@@ -186,6 +186,59 @@ final class WordPressSource
     }
 
     /**
+     * Metadata attached to a WordPress user (`wp_usermeta`).
+     *
+     * WordPress keeps capabilities, nicknames and profile fields in this table. This platform has
+     * no equivalent, so the values are read and the unmapped keys are reported rather than silently
+     * left behind — the same treatment postmeta gets.
+     *
+     * @return array<string, list<string>>
+     */
+    public function userMeta(int $userId): array
+    {
+        return $this->metaFor('usermeta', 'user_id', $userId, 'umeta_id');
+    }
+
+    /**
+     * Metadata attached to a WordPress term (`wp_termmeta`).
+     *
+     * @return array<string, list<string>>
+     */
+    public function termMeta(int $termId): array
+    {
+        return $this->metaFor('termmeta', 'term_id', $termId);
+    }
+
+    /**
+     * Read a `*_meta` table into `key => [values]`.
+     *
+     * A missing table is not an error: `wp_termmeta` only exists since WordPress 4.4, and a site
+     * that never added user meta may legitimately have no rows.
+     *
+     * @return array<string, list<string>>
+     */
+    private function metaFor(string $table, string $column, int $id, string $orderBy = 'meta_id'): array
+    {
+        try {
+            $rows = $this->select(
+                'SELECT meta_key, meta_value FROM `' . $this->table($table) . '` '
+                . 'WHERE ' . $column . ' = :id ORDER BY ' . $orderBy . ' ASC',
+                ['id' => $id]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $out = [];
+
+        foreach ($rows as $row) {
+            $out[(string) $row['meta_key']][] = (string) $row['meta_value'];
+        }
+
+        return $out;
+    }
+
+    /**
      * Term ids attached to a post, keyed by taxonomy name.
      *
      * @return array<string, list<int>>

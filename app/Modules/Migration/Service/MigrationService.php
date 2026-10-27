@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CMS\Modules\Migration\Service;
 
 use CMS\Modules\Comment\Contracts\CommentServiceInterface;
+use CMS\Modules\Comment\Exceptions\CommentDepthExceededException;
 use CMS\Modules\Comment\Exceptions\CommentsClosedException;
 use CMS\Modules\Content\Contracts\ContentServiceInterface;
 use CMS\Modules\Content\Contracts\UrlGeneratorInterface;
@@ -312,6 +313,8 @@ final class MigrationService implements MigrationServiceInterface
 
         $this->repository->recordMap($siteId, 'user', $sourceId, 'user', (int) $user->id);
 
+        $this->logUncarriedMeta($siteId, 'user', $sourceId, $this->source->userMeta($sourceId), 'WordPress usermeta has no equivalent here; not carried across.');
+
         $this->repository->log($siteId, $this->runId, 'info', [
             'source_type' => 'user',
             'source_id' => $sourceId,
@@ -330,14 +333,36 @@ final class MigrationService implements MigrationServiceInterface
         $sourceId = (int) $row['tt_id'];
         $taxonomy = (string) $row['taxonomy'] === 'category' ? 'category' : 'tag';
 
+        // WordPress stores the parent as a term_id; the map keeps a target for it. Batches run in
+        // term_taxonomy order, so a parent is normally already there — when it is not, the term is
+        // created at the root and the gap is recorded instead of silently flattening the tree.
+        $parentSource = (int) ($row['parent'] ?? 0);
+        $parentId = null;
+
+        if ($parentSource > 0) {
+            $parentId = $this->repository->targetId($siteId, 'term', $parentSource);
+
+            if ($parentId === null) {
+                $this->repository->log($siteId, $this->runId, 'warning', [
+                    'source_type' => 'term',
+                    'source_id' => $sourceId,
+                    'field' => 'parent',
+                    'reason' => 'Parent term ' . $parentSource . ' was not migrated yet; the term is '
+                        . 'created at the root.',
+                ]);
+            }
+        }
+
         $term = $this->taxonomy->createTerm(
             $siteId,
             $taxonomy,
             (string) $row['name'],
             (string) ($row['description'] ?? '') !== '' ? (string) $row['description'] : null,
-            null,
+            $parentId,
             (string) ($row['slug'] ?? '') !== '' ? (string) $row['slug'] : null,
         );
+
+        $this->logUncarriedMeta($siteId, 'term', $sourceId, $this->source->termMeta((int) $row['term_id']), 'WordPress termmeta has no equivalent here; not carried across.');
 
         $this->repository->recordMap($siteId, 'term:' . $taxonomy, $sourceId, 'term', (int) $term->id);
         // Also map by the bare term id, because relationships reference term_id rather than
@@ -508,18 +533,39 @@ final class MigrationService implements MigrationServiceInterface
             return null;
         }
 
-        // Comments in this platform require an account; WordPress allowed guests.
+        // This platform allows guest comments now (`user_id = 0` plus a typed name), so a
+        // WordPress guest comment is migrated instead of dropped. Its author name is the only
+        // identity WordPress stored, and it is carried across as-is.
         $userId = $this->userForComment($siteId, (string) $row['comment_author_email']);
 
-        if ($userId === null) {
-            $this->repository->log($siteId, $this->runId, 'warning', [
-                'source_type' => 'comment',
-                'source_id' => $sourceId,
-                'field' => 'comment_author_email',
-                'reason' => 'Guest commenter has no account on the target site; comment not imported.',
-            ]);
+        $authorName = null;
 
-            return null;
+        if ($userId === null) {
+            $userId = 0;
+            $authorName = trim((string) ($row['comment_author'] ?? ''));
+
+            if ($authorName === '') {
+                $authorName = 'Guest';
+            }
+        }
+
+        // Threading lives in `comment_parent`. Comments are imported in ID order, so the parent is
+        // normally already mapped; a reply whose parent was not migrated becomes a root comment and
+        // says so, which is better than silently flattening the thread.
+        $parentSource = (int) ($row['comment_parent'] ?? 0);
+        $parentId = null;
+
+        if ($parentSource > 0) {
+            $parentId = $this->repository->targetId($siteId, 'comment', $parentSource);
+
+            if ($parentId === null) {
+                $this->repository->log($siteId, $this->runId, 'warning', [
+                    'source_type' => 'comment',
+                    'source_id' => $sourceId,
+                    'field' => 'comment_parent',
+                    'reason' => 'Parent comment ' . $parentSource . ' was not migrated; imported at the root.',
+                ]);
+            }
         }
 
         try {
@@ -528,6 +574,25 @@ final class MigrationService implements MigrationServiceInterface
                 $contentId,
                 $userId,
                 (string) $row['comment_content'],
+                $parentId,
+                $authorName,
+            );
+        } catch (CommentDepthExceededException) {
+            // Deeper than this platform allows: keep the comment, move it to the root, say so.
+            $this->repository->log($siteId, $this->runId, 'warning', [
+                'source_type' => 'comment',
+                'source_id' => $sourceId,
+                'field' => 'comment_parent',
+                'reason' => 'Thread deeper than the platform allows; imported at the root.',
+            ]);
+
+            $comment = $this->comments->submit(
+                $siteId,
+                $contentId,
+                $userId,
+                (string) $row['comment_content'],
+                null,
+                $authorName,
             );
         } catch (CommentsClosedException) {
             $this->repository->log($siteId, $this->runId, 'warning', [
@@ -742,6 +807,27 @@ final class MigrationService implements MigrationServiceInterface
                 'source_id' => $sourceId,
                 'field' => $key,
                 'reason' => 'Unmapped postmeta key; not carried across.',
+            ]);
+        }
+    }
+
+    /**
+     * Record metadata that has no equivalent here, key by key.
+     *
+     * The same policy the post meta gets: nothing is silently dropped. `wp_usermeta` and
+     * `wp_termmeta` hold capabilities and plugin fields this platform does not model, and an
+     * operator reading the migration report should know what did not come across.
+     *
+     * @param array<string, list<string>> $meta
+     */
+    private function logUncarriedMeta(int $siteId, string $type, int $sourceId, array $meta, string $reason): void
+    {
+        foreach (array_keys($meta) as $key) {
+            $this->repository->log($siteId, $this->runId, 'warning', [
+                'source_type' => $type,
+                'source_id' => $sourceId,
+                'field' => $key,
+                'reason' => $reason,
             ]);
         }
     }
