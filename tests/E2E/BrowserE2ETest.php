@@ -71,6 +71,14 @@ final class BrowserE2ETest extends AdminTestCase
             }
         }
 
+        // `php -S` handles one connection at a time. A browser opens several (page, stylesheet,
+        // preconnect), and on a fast runner the later ones time out and Chrome renders its own
+        // error page instead of the site. Workers make the built-in server usable by a browser.
+        // Honoured on POSIX only; Windows ignores it, where the tests run one connection at a time.
+        if (DIRECTORY_SEPARATOR !== '\\') {
+            $env['PHP_CLI_SERVER_WORKERS'] = '4';
+        }
+
         // Output goes to a file, not to pipes. Pipes kept the parent process alive after the last
         // test: proc_close() waits for the child, and the child was still writing.
         self::$serverLog = dirname(__DIR__, 2) . '/storage/temp/e2e-server.log';
@@ -200,6 +208,17 @@ final class BrowserE2ETest extends AdminTestCase
         exec($command, $output, $status);
 
         $dom = implode("\n", $output);
+
+        // Chrome renders its own error page when it cannot talk to the server. Saying so, with the
+        // server's own log, is the difference between a five-minute fix and an afternoon.
+        if (str_contains($dom, 'An unexpected error occurred')) {
+            $log = trim((string) @file_get_contents(self::$serverLog));
+
+            self::fail(
+                'The browser could not load ' . $this->url($path) . '. Server log:'
+                . "\n" . (substr($log, -1500) ?: '(empty)')
+            );
+        }
 
         self::assertNotSame('', trim($dom), 'The browser produced no DOM for ' . $path);
 
