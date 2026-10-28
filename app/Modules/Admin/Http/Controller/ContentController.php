@@ -53,6 +53,7 @@ final class ContentController extends AdminController
         private readonly SeoServiceInterface $seo,
         private readonly MediaServiceInterface $media,
         private readonly BlockFormCompiler $blocks,
+        private readonly \CMS\Modules\Identity\Contracts\UserServiceInterface $users,
     ) {
         parent::__construct($view, $session, $csrf, $actors);
     }
@@ -85,8 +86,19 @@ final class ContentController extends AdminController
             $criteria['author_id'] = (int) $actor->id();
         }
 
+        $result = $this->query->paginate($siteId, $criteria);
+
+        // The list used to print the raw author id, which reads as a bug to anyone looking at it.
+        // The names come from one query, not one per row.
+        $authors = [];
+
+        foreach ($this->users->listForSite($siteId) as $user) {
+            $authors[(int) $user->id] = $user->displayName !== '' ? $user->displayName : $user->username;
+        }
+
         return $this->html($request, 'content/index', 'Content', [
-            'result' => $this->query->paginate($siteId, $criteria),
+            'result' => $result,
+            'authors' => $authors,
             'status' => $status,
             'search' => $search,
             'mineOnly' => $mineOnly,

@@ -16,6 +16,7 @@ $e = static fn (mixed $value): string => $view->e($value);
 $result = $view->get('result', ['items' => [], 'total' => 0, 'page' => 1, 'total_pages' => 0]);
 $status = (string) $view->get('status', '');
 $search = (string) $view->get('search', '');
+$authors = $view->get('authors', []);
 $mineOnly = (bool) $view->get('mineOnly', false);
 
 $statuses = ['', 'draft', 'submitted', 'review', 'revision_requested', 'approved', 'scheduled', 'published'];
@@ -76,7 +77,7 @@ $formatDate = static fn (?object $value): string => $value instanceof \DateTimeI
                     <a href="/admin/content/<?= $e($item->id) ?>"><?= $e($item->title) ?></a>
                 </td>
                 <td><span class="badge badge--<?= $e($item->status) ?>"><?= $e($item->status) ?></span></td>
-                <td class="muted"><?= $e($item->authorId) ?></td>
+                <td class="muted"><?= $e($authors[$item->authorId] ?? ('#' . $item->authorId)) ?></td>
                 <td class="muted"><?= $e($formatDate($item->updatedAt)) ?></td>
             </tr>
         <?php endforeach; ?>

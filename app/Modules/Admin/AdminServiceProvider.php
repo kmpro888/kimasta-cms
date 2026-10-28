@@ -141,6 +141,7 @@ final class AdminServiceProvider implements ServiceProviderInterface
                 $c->get(SeoServiceInterface::class),
                 $c->get(MediaServiceInterface::class),
                 $c->get(BlockFormCompiler::class),
+                $c->get(UserServiceInterface::class),
             )
         );
 

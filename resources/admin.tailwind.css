@@ -1,0 +1,548 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * The admin design system.
+ *
+ * The views use **semantic classes** (`panel`, `field__input`, `button--primary`) rather than
+ * utility soup, and this file implements those classes with Tailwind. That keeps two things true at
+ * once: the markup stays readable and unchanged, and the visual language lives in one place.
+ *
+ * Colors are slate + indigo with semantic accents (emerald for published, rose for danger,
+ * amber for waiting). Every interactive control keeps a visible focus ring — the accessibility
+ * pass checks structure, not contrast, so the focus ring is a deliberate choice rather than a
+ * side effect.
+ */
+
+@layer base {
+    html {
+        @apply h-full;
+    }
+
+    body {
+        @apply h-full bg-slate-50 text-[15px] leading-relaxed text-slate-800 antialiased;
+    }
+
+    h1, h2, h3 {
+        @apply font-semibold tracking-tight text-slate-900;
+    }
+
+    a {
+        @apply text-indigo-700 underline-offset-2 hover:underline;
+    }
+
+    code {
+        @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.8125rem] text-slate-700;
+    }
+
+    :focus-visible {
+        @apply outline-none ring-2 ring-indigo-500 ring-offset-2 ring-offset-white;
+    }
+}
+
+@layer components {
+    /* ---------- chrome ---------- */
+
+    .topbar {
+        @apply sticky top-0 z-20 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-slate-200 bg-white/95 px-6 py-3 backdrop-blur;
+    }
+
+    .topbar__brand {
+        @apply text-base font-semibold tracking-tight text-slate-900 no-underline hover:no-underline;
+    }
+
+    .topbar__nav {
+        @apply flex flex-wrap items-center gap-1 text-sm;
+    }
+
+    .topbar__link {
+        @apply rounded-md px-2.5 py-1.5 text-slate-600 no-underline transition-colors hover:bg-slate-100 hover:text-slate-900 hover:no-underline;
+    }
+
+    .topbar__link.is-active {
+        @apply bg-indigo-50 font-medium text-indigo-700;
+    }
+
+    .topbar__account {
+        @apply ml-auto flex items-center gap-3 text-sm text-slate-500;
+    }
+
+    .link-button {
+        @apply cursor-pointer border-0 bg-transparent p-0 text-sm text-slate-500 underline-offset-2 hover:text-slate-900 hover:underline;
+    }
+
+    .main {
+        @apply mx-auto w-full max-w-5xl px-6 py-8;
+    }
+
+    /* display: inline rather than @apply inline: the utility shares this class name, and
+       Tailwind refuses to apply a utility inside a class of the same name. */
+    .inline {
+        display: inline;
+    }
+
+    .visually-hidden {
+        @apply absolute -m-px h-px w-px overflow-hidden whitespace-nowrap border-0 p-0;
+        clip: rect(0 0 0 0);
+    }
+
+    .skip-link {
+        @apply sr-only;
+    }
+
+    .skip-link:focus {
+        @apply not-sr-only absolute left-4 top-4 z-50 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white no-underline;
+    }
+
+    /* ---------- page header ---------- */
+
+    .page-head {
+        @apply mb-6 flex flex-wrap items-end justify-between gap-4;
+    }
+
+    .page-head__title {
+        @apply text-2xl font-semibold tracking-tight text-slate-900;
+    }
+
+    .page-head__sub {
+        @apply mt-1 text-sm text-slate-500;
+    }
+
+    .page-head__back {
+        @apply text-sm text-slate-500 no-underline hover:text-indigo-700 hover:underline;
+    }
+
+    /* ---------- surfaces ---------- */
+
+    .panel {
+        @apply mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-card;
+    }
+
+    .panel__title {
+        @apply mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500;
+    }
+
+    .panel__more {
+        @apply text-sm font-medium text-indigo-700 no-underline hover:underline;
+    }
+
+    .panel__thumb {
+        @apply h-10 w-10 rounded-md object-cover ring-1 ring-slate-200;
+    }
+
+    .empty {
+        @apply rounded-lg border border-dashed border-slate-300 bg-white/60 px-5 py-8 text-center text-sm text-slate-500;
+    }
+
+    .hint {
+        @apply text-sm text-slate-500;
+    }
+
+    .muted {
+        @apply text-slate-500;
+    }
+
+    .notice {
+        @apply mb-5 rounded-lg border px-4 py-3 text-sm;
+    }
+
+    .notice--error {
+        @apply border-rose-200 bg-rose-50 text-rose-800;
+    }
+
+    .notice--info {
+        @apply border-sky-200 bg-sky-50 text-sky-900;
+    }
+
+    /* ---------- buttons ---------- */
+
+    .button {
+        @apply inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .button--primary {
+        @apply border-transparent bg-indigo-600 text-white hover:bg-indigo-700 hover:text-white;
+    }
+
+    .button--danger {
+        @apply border-rose-200 bg-white text-rose-700 hover:bg-rose-50 hover:text-rose-800;
+    }
+
+    .button--small {
+        @apply px-2.5 py-1.5 text-xs;
+    }
+
+    .button--block {
+        @apply w-full;
+    }
+
+    .actions {
+        @apply mt-5 flex flex-wrap items-center gap-2;
+    }
+
+    .actions--stack {
+        @apply mt-5 flex flex-col items-start gap-2;
+    }
+
+    /* ---------- forms ---------- */
+
+    /* NOTE: never @apply block in this file. lock is also a component defined here, so
+       Tailwind resolves it to that component and silently applies the card styling. Use the plain
+       declaration instead. */
+    .field {
+        display: block;
+        @apply mb-4;
+    }
+
+    .field--inline {
+        @apply mb-0 inline-block;
+    }
+
+    .field__label {
+        display: block;
+        @apply mb-1.5 text-sm font-medium text-slate-700;
+    }
+
+    .field__input {
+        display: block;
+        @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30;
+    }
+
+    .field__input--text {
+        @apply text-sm;
+    }
+
+    .field__input--title {
+        @apply text-lg font-semibold tracking-tight;
+    }
+
+    .field__error {
+        display: block;
+        @apply mt-1.5 text-sm font-medium text-rose-700;
+    }
+
+    .check {
+        @apply mb-4 flex items-center gap-2 text-sm text-slate-700;
+    }
+
+    .upload {
+        @apply flex flex-wrap gap-4;
+    }
+
+    .filters {
+        @apply mb-5 flex flex-wrap items-end gap-3;
+    }
+
+    .tabs {
+        @apply mb-5 flex flex-wrap gap-1 border-b border-slate-200 text-sm;
+    }
+
+    .tabs__count {
+        @apply ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600;
+    }
+
+    /* ---------- table ---------- */
+
+    .table {
+        @apply mb-5 w-full border-collapse overflow-hidden rounded-xl border border-slate-200 bg-white text-sm shadow-card;
+    }
+
+    .table thead th {
+        @apply border-b border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+    }
+
+    .table tbody td {
+        @apply border-b border-slate-100 px-4 py-3 align-top text-slate-700;
+    }
+
+    .table tbody tr:last-child td {
+        @apply border-b-0;
+    }
+
+    .table tbody tr:hover {
+        @apply bg-slate-50/70;
+    }
+
+    /* ---------- badges ---------- */
+
+    .badge {
+        @apply inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700;
+    }
+
+    .badge--published {
+        @apply bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200;
+    }
+
+    .badge--trashed {
+        @apply bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200;
+    }
+
+    /* ---------- pagination ---------- */
+
+    .pager,
+    .pagination {
+        @apply mt-5 flex flex-wrap items-center gap-2 text-sm text-slate-500;
+    }
+
+    /* ---------- content list ---------- */
+
+    .list {
+        @apply m-0 list-none divide-y divide-slate-100 p-0;
+    }
+
+    .list__item {
+        @apply flex flex-wrap items-center justify-between gap-3 py-3;
+    }
+
+    .list__title {
+        @apply font-medium text-slate-900 no-underline hover:text-indigo-700 hover:underline;
+    }
+
+    .list__meta {
+        @apply flex items-center gap-3 text-xs text-slate-500;
+    }
+
+    /* ---------- editor ---------- */
+
+    .editor {
+        @apply grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem];
+    }
+
+    .editor__main {
+        @apply min-w-0;
+    }
+
+    .editor__side {
+        @apply min-w-0;
+    }
+
+    .blocks {
+        @apply m-0 list-none space-y-3 p-0;
+    }
+
+    .block {
+        @apply rounded-lg border border-slate-200 bg-white p-4;
+    }
+
+    .block__head {
+        @apply mb-2 flex items-center justify-between gap-3;
+    }
+
+    .block__type {
+        @apply text-xs font-semibold uppercase tracking-wide text-indigo-700;
+    }
+
+    .block__level {
+        @apply text-xs text-slate-500;
+    }
+
+    .block__preview {
+        @apply text-sm text-slate-600;
+    }
+
+    .preview {
+        @apply rounded-lg border border-dashed border-slate-300 bg-white p-4;
+    }
+
+    /* ---------- media ---------- */
+
+    .media-grid {
+        @apply grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4;
+    }
+
+    .media-card {
+        @apply rounded-xl border border-slate-200 bg-white p-3 shadow-card;
+    }
+
+    .media-card__frame {
+        @apply mb-3 overflow-hidden rounded-lg bg-slate-100;
+    }
+
+    .media-card__image {
+        @apply h-32 w-full object-cover;
+    }
+
+    .media-card__file {
+        @apply mb-2 flex items-center gap-2 text-sm;
+    }
+
+    .media-card__name {
+        @apply truncate font-medium text-slate-900;
+    }
+
+    .media-card__meta {
+        @apply flex items-center justify-between gap-2 text-xs text-slate-500;
+    }
+
+    .media-card__size {
+        @apply text-slate-500;
+    }
+
+    .media-card__form {
+        @apply mt-2;
+    }
+
+    /* ---------- comments ---------- */
+
+    .comment-list {
+        @apply m-0 list-none space-y-3 p-0;
+    }
+
+    .comment-item {
+        @apply rounded-xl border border-slate-200 bg-white p-4 shadow-card;
+    }
+
+    .comment-item__head {
+        @apply mb-1 flex flex-wrap items-center gap-2 text-sm;
+    }
+
+    .comment-item__on {
+        @apply text-slate-500;
+    }
+
+    .comment-item__when {
+        @apply text-xs text-slate-400;
+    }
+
+    .comment-item__body {
+        @apply text-sm text-slate-700;
+    }
+
+    .comment-item__actions {
+        @apply mt-3 flex flex-wrap gap-2;
+    }
+
+    /* ---------- notifications ---------- */
+
+    .notice-list {
+        @apply m-0 list-none space-y-2 p-0;
+    }
+
+    .notice-item__head {
+        @apply flex flex-wrap items-center gap-2 text-sm;
+    }
+
+    .notice-item__body {
+        @apply text-sm text-slate-600;
+    }
+
+    .notice-item__when {
+        @apply text-xs text-slate-400;
+    }
+
+    .notice-item__actions {
+        @apply mt-2 flex gap-2;
+    }
+
+    /* ---------- plugins ---------- */
+
+    .plugin-list {
+        @apply space-y-3;
+    }
+
+    .plugin-item {
+        @apply rounded-xl border border-slate-200 bg-white p-5 shadow-card;
+    }
+
+    .plugin-item__head {
+        @apply flex flex-wrap items-center gap-2;
+    }
+
+    .plugin-item__description {
+        @apply mt-1 text-sm text-slate-600;
+    }
+
+    .plugin-item__meta {
+        @apply mt-1 text-xs text-slate-500;
+    }
+
+    .plugin-item__actions {
+        @apply mt-3 flex flex-wrap items-center gap-2;
+    }
+
+    /* ---------- history (workflow) ---------- */
+
+    .history {
+        @apply m-0 list-none space-y-2 border-l-2 border-slate-200 pl-4;
+    }
+
+    .history__item {
+        @apply text-sm;
+    }
+
+    .history__move {
+        @apply font-medium text-slate-900;
+    }
+
+    .history__when {
+        @apply text-xs text-slate-400;
+    }
+
+    .history__note {
+        @apply text-slate-600;
+    }
+
+    /* ---------- revision diff ---------- */
+
+    .diff-pair {
+        @apply grid gap-4 sm:grid-cols-2;
+    }
+
+    .diff-before,
+    .diff-after {
+        @apply rounded-lg border p-3 text-sm;
+    }
+
+    .diff-before {
+        @apply border-rose-200 bg-rose-50/60;
+    }
+
+    .diff-after {
+        @apply border-emerald-200 bg-emerald-50/60;
+    }
+
+    /* ---------- domains ---------- */
+
+    .domain-row {
+        @apply mb-2 flex flex-wrap items-center gap-2;
+    }
+
+    /* ---------- login & error pages ---------- */
+
+    .login {
+        @apply flex min-h-full items-center justify-center bg-slate-100 px-6 py-12;
+    }
+
+    .login__form {
+        @apply w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-card;
+    }
+
+    .login__brand {
+        @apply mb-6 text-lg font-semibold tracking-tight text-slate-900;
+    }
+
+    .is-login {
+        @apply min-h-full bg-slate-100;
+    }
+
+    .is-error {
+        @apply min-h-full bg-slate-100;
+    }
+
+    .error-page {
+        @apply mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center shadow-card;
+    }
+
+    .error-page__status {
+        @apply text-sm font-semibold uppercase tracking-widest text-slate-400;
+    }
+
+    .error-page__heading {
+        @apply mt-2 text-2xl font-semibold tracking-tight text-slate-900;
+    }
+
+    .error-page__message {
+        @apply mt-2 text-sm text-slate-600;
+    }
+}
